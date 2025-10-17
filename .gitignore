@@ -1,3 +1,4 @@
 # Archivos de configuración del IDE
 .idea/
-
+data/*
+results/*
