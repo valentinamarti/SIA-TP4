@@ -1,7 +1,4 @@
-import numpy as np
 import pandas as pd
-import math
-import sys
 
 from europe.kohonen_net import KohonenNet
 from graphs.kohonen_graphs import plot_u_matrix, plot_hit_map, plot_component_plane

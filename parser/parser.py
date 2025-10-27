@@ -1,6 +1,5 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-import numpy as np
 
 
 def upload_data(filepath):
