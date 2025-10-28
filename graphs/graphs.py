@@ -4,7 +4,7 @@ import pandas as pd
 import seaborn as sns
 
 
-def plot_biplot(projected_data, pca, country_labels, feature_labels):
+def plot_biplot(projected_data, pca, country_labels, feature_labels, name):
     scores_x, scores_y = projected_data[:, 0], projected_data[:, 1]
     loadings_x, loadings_y = pca.components_[0, :], pca.components_[1, :]
 
@@ -26,26 +26,29 @@ def plot_biplot(projected_data, pca, country_labels, feature_labels):
     plt.ylabel(f"PC2 ({pca.explained_variance_ratio_[1] * 100:.1f}%)")
     plt.title('Biplot of European Countries (PCA)')
     plt.grid(True)
+    filename = f"results/{name.lower()}_biplot.png"
+    plt.savefig(filename)
     plt.savefig('results/biplot.png')
     plt.close()
 
-def plot_bar_chart(pc1_scores, countries):
+def plot_bar_chart(pc1_scores, countries, name):
     df_index = pd.DataFrame({'Country': countries, 'PC1_Score': pc1_scores})
     df_index_sorted = df_index.sort_values(by='PC1_Score', ascending=False)
 
     plt.figure(figsize=(12, 8))
     sns.barplot(x='Country', y='PC1_Score', data=df_index_sorted, palette='viridis')
     plt.xticks(rotation=90, fontsize=10)
-    plt.title('Bar Chart: PC1 Index by Country')
+    plt.title(name+' - Bar Chart: PC1 Index by Country')
     plt.ylabel('First Principal Component Score (PC1)')
     plt.xlabel('Country')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig('results/pca_bar_index.png')
+    filename = f"results/{name}_bar_index.png"
+    plt.savefig(filename)
     plt.close()
 
 
-def plot_boxplot(scaled_data, feature_names):
+def plot_boxplot(scaled_data, feature_names, name):
     df_scaled_features = pd.DataFrame(scaled_data, columns=feature_names)
 
     plt.figure(figsize=(12, 8))
@@ -56,5 +59,6 @@ def plot_boxplot(scaled_data, feature_names):
     plt.xticks(rotation=45, ha='right')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     plt.tight_layout()
-    plt.savefig('results/pca_boxplot.png')
+    filename = f"results/{name.lower()}_boxplot.png"
+    plt.savefig(filename)
     plt.close()

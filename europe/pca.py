@@ -17,16 +17,16 @@ def pca(filepath):
 
     # 3. Generate plots
     print("Step 3: Generating plots...")
-    plot_biplot(projected_data, pca_model, country_names, feature_names)
+    plot_biplot(projected_data, pca_model, country_names, feature_names, "pca")
     print("- 'biplot.png' saved.")
 
     # Extract the scores of the first component
     pc1_scores = projected_data[:, 0]
 
-    plot_bar_chart(pc1_scores, country_names)
+    plot_bar_chart(pc1_scores, country_names, "pca")
     print("- 'pca_bar_index.png' saved.")
 
-    plot_boxplot(scaled_data, feature_names)
+    plot_boxplot(scaled_data, feature_names, "pca")
     print("- 'pca_boxplot.png' saved.\n")
 
     # 4. Interpret the first principal component

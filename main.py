@@ -2,6 +2,7 @@ import argparse
 import os
 import sys
 
+from europe.oja import run_oja_analysis
 from europe.pca import pca
 from utils.kohonen_analysis import run_kohonen_analysis
 
@@ -30,6 +31,11 @@ def execute_kohonen_analysis(filepath):
 
     print("Análisis de Kohonen finalizado.")
 
+def execute_oja_analysis(filepath: str) -> None:
+    run_oja_analysis(filepath)
+    print("Análisis de Oja finalizado.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ejecuta diferentes análisis de SIA (Kohonen/PCA) en datasets.")
     subparsers = parser.add_subparsers(dest="command", required=True, help="El comando a ejecutar (kohonen o pca).")
@@ -41,11 +47,18 @@ if __name__ == "__main__":
         help="La ruta al archivo CSV (ej: europe.csv)"
     )
 
-    parser_pca = subparsers.add_parser("pca", help="Ejecuta el análisis de la Regla de Oja (PCA) (Ejercicio 1.2).")
+    parser_pca = subparsers.add_parser("pca", help="Ejecuta el análisis de la Regla de Oja (PCA con librería) (Ejercicio 1.2).")
     parser_pca.add_argument(
         "filepath",
         type=str,
         help="La ruta al archivo CSV (ej: europe.csv)"
+    )
+
+    parser_oja = subparsers.add_parser("oja", help="Ejecuta el análisis de la Regla de Oja (Ejercicio 1.2).")
+    parser_oja.add_argument(
+        "filepath",
+        type=str,
+        help="Path to the CSV file (e.g., europe.csv)"
     )
 
     args = parser.parse_args()
@@ -54,8 +67,9 @@ if __name__ == "__main__":
         print(f"Error: El archivo no se encontró en la ruta: {args.filepath}")
         sys.exit(1)
 
-    if args.command == "pca":
-        execute_pca_analysis(args.filepath)
-
-    elif args.command == "kohonen":
+    if args.command == "kohonen":
         execute_kohonen_analysis(args.filepath)
+    elif args.command == "pca":
+        execute_pca_analysis(args.filepath)
+    elif args.command == "oja":
+        execute_oja_analysis(args.filepath)
