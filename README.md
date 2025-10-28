@@ -54,7 +54,7 @@ Implementación de la Regla de Oja para calcular la Primera Componente Principal
 | Tarea                                          | Comando de Ejecución (Ejemplo)                 |
 |:-----------------------------------------------|:-----------------------------------------------|
 | **Calcular PC1 con libreria externa**          | python main.py pca ./data/europe.csv           |
-| **Calcular PC1 con Oja**                       | python main.py pca ./data/europe.csv --oja     |
+| **Calcular PC1 con Oja**                       | python main.py oja ./data/europe.csv           |
 | **Calcular y Comparar PC1 (Oja vs. Librería)** | python main.py pca ./date/europe.csv --compare |
 
 ---
