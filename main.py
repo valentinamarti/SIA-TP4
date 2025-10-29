@@ -4,7 +4,7 @@ import sys
 
 from europe.oja import run_oja_analysis
 from europe.pca import pca
-from patterns.patterns3 import run_a
+from patterns.patterns import run_a, run_b
 from utils.kohonen_analysis import run_kohonen_analysis
 
 
@@ -68,6 +68,11 @@ if __name__ == "__main__":
         type=float,
         help="Noise to apply to original patterns"
     )
+    parser_hopfield.add_argument(
+        "exercise",
+        type=str,
+        help="Exercise to run (a or b)"
+    )
     args = parser.parse_args()
 
     # if not os.path.exists(args.filepath):
@@ -81,4 +86,10 @@ if __name__ == "__main__":
     elif args.command == "oja":
         execute_oja_analysis(args.filepath)
     elif args.command == "hopfield":
-        run_a(p_noise=args.noise)
+        if args.exercise == "a":
+            run_a(p_noise=args.noise)
+        elif args.exercise == "b":
+            run_b(p_noise=args.noise)
+        else:
+            print("Error: Ejercicio no válido. Use 'a' o 'b'.")
+            sys.exit(1)
