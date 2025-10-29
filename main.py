@@ -4,6 +4,7 @@ import sys
 
 from europe.oja import run_oja_analysis
 from europe.pca import pca
+from patterns.patterns3 import run_a
 from utils.kohonen_analysis import run_kohonen_analysis
 
 
@@ -61,11 +62,17 @@ if __name__ == "__main__":
         help="Path to the CSV file (e.g., europe.csv)"
     )
 
+    parser_hopfield = subparsers.add_parser("hopfield", help="Ejecuta Hopfield (Ejercicio 2.1).")
+    parser_hopfield.add_argument(
+        "noise",
+        type=float,
+        help="Noise to apply to original patterns"
+    )
     args = parser.parse_args()
 
-    if not os.path.exists(args.filepath):
-        print(f"Error: El archivo no se encontró en la ruta: {args.filepath}")
-        sys.exit(1)
+    # if not os.path.exists(args.filepath):
+    #     print(f"Error: El archivo no se encontró en la ruta: {args.filepath}")
+    #     sys.exit(1)
 
     if args.command == "kohonen":
         execute_kohonen_analysis(args.filepath)
@@ -73,3 +80,5 @@ if __name__ == "__main__":
         execute_pca_analysis(args.filepath)
     elif args.command == "oja":
         execute_oja_analysis(args.filepath)
+    elif args.command == "hopfield":
+        run_a(p_noise=args.noise)
