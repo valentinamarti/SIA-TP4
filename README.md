@@ -61,10 +61,12 @@ Implementación de la Regla de Oja para calcular la Primera Componente Principal
 
 ### 2. Ejercicio Patrones
 Este ejercicio utiliza el **Modelo de Hopfield** como memoria asociativa con patrones de letras $5\times5$ (`1` y `-1`).
+Los patrones almacenados para este ejercicio se definen en el archivo dentro de la carpeta `./patterns`.
+Este comando requiere el argumento de ruido (`noise`) como *float* y la ruta al archivo con el patrón ruidoso de entrada.
 
 #### 2.1. Modelo de Hopfield
 
-| Tarea | Comando de Ejecución (Ejemplo) |
-| :--- |:-------------------------------|
-| **Asociación de Patrones** (Convergencia) | python main.py hopfield        |
-| **Estado Espúreo** (Patrón Ruidoso) | python main.py hopfield        |
+| Tarea | Comando de Ejecución (Ejemplo)                                       |
+| :--- |:---------------------------------------------------------------------|
+| **Asociación de Patrones** (Convergencia) | python main.py hopfield  [VALOR_BAJO_NOISE]                          |
+| **Estado Espúreo** (Patrón Ruidoso) | python main.py hopfield [VALOR_BAJO_NOISE] [RUTA_DEL_ARCHIVO_PATRON] |
