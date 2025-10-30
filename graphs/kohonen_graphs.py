@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 from typing import Optional
+import seaborn as sns
+import pandas as pd
 
 def _get_staggered_coords(rows, cols, radius_data_units=0.45):
     """
@@ -89,32 +91,34 @@ def plot_circle_map(map_values, rows, cols, title, label, cmap, plot_type: str, 
         plt.show()
 
 
-def plot_u_matrix(u_matrix, rows, cols):
+def plot_u_matrix(u_matrix, rows, cols, output_name):
     """Generates the U-Matrix plot (compact circles) and saves it."""
+    filename = f'u_matrix_{output_name}.png'
     plot_circle_map(u_matrix, rows, cols,
                     title='Unified Distance Matrix (U-Matrix) - Compact Topology',  # Título simplificado
                     label='Average Euclidean Distance (Dissimilarity)',
                     cmap='plasma',
                     plot_type='u_matrix',
-                    filename='u_matrix.png')
+                    filename=filename)
 
 
-def plot_hit_map(count_map, rows, cols):
+def plot_hit_map(count_map, rows, cols, output_name):
     """Generates the Count Map plot (compact circles) and saves it."""
+    filename = f'hit_map_{output_name}.png'
     plot_circle_map(count_map, rows, cols,
                     title='Count Map (Hit Frequency) - Compact Topology',  # Título simplificado
                     label='Number of Associated Countries (Density)',
                     cmap='coolwarm',
                     plot_type='hit_map',
-                    filename='hit_map.png')
+                    filename=filename)
 
 
-def plot_component_plane(weights, feature_index, feature_name, rows, cols):
+def plot_component_plane(weights, feature_index, feature_name, rows, cols, output_name):
     """Generates the Component Plane plot (compact circles) for a single feature and saves it."""
     component_plane = weights[:, feature_index]
 
     safe_feature_name = feature_name.replace('.', '_').replace(' ', '_')
-    filename = f'component_{safe_feature_name}.png'
+    filename = f'component_{safe_feature_name}_{output_name}.png'
 
     plot_circle_map(component_plane, rows, cols,
                     title=f'Component Map: Influence of "{feature_name}"',  # Título simplificado
@@ -124,7 +128,7 @@ def plot_component_plane(weights, feature_index, feature_name, rows, cols):
                     filename=filename)
 
 
-def plot_all_component_planes(weights, feature_names, map_rows, map_cols):
+def plot_all_component_planes(weights, feature_names, map_rows, map_cols, output_name):
     """
     Genera y guarda un gráfico multi-panel de círculos escalonados
     (Component Planes) para todas las variables de entrada.
@@ -210,12 +214,12 @@ def plot_all_component_planes(weights, feature_names, map_rows, map_cols):
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
 
-    filename = f'{results_dir}/all_component_planes.png'
+    filename = f'{results_dir}/all_component_planes_{output_name}.png'
     plt.savefig(filename, bbox_inches='tight')
     plt.close(fig)
 
 
-def plot_bmu_table(mapping_df, map_rows, map_cols):
+def plot_bmu_table(mapping_df, map_rows, map_cols, output_name):
     """
     Genera y guarda una imagen PNG de la tabla de mapeo de países a BMU.
 
@@ -245,7 +249,7 @@ def plot_bmu_table(mapping_df, map_rows, map_cols):
 
     ax.set_title(f'Mapeo de Países a Neurona Ganadora (BMU) en mapa {map_rows}x{map_cols}', fontsize=12, pad=20)
 
-    filename = f'./results/bmu_mapping_table.png'
+    filename = f'./results/bmu_mapping_table_{output_name}.png'
     plt.savefig(filename, bbox_inches='tight', dpi=300)
     print(f"Graph saved to: {filename}")
     plt.close(fig)

@@ -6,7 +6,7 @@ from graphs.kohonen_graphs import plot_u_matrix, plot_hit_map, plot_component_pl
 from parser.parser import load_and_preprocess_data
 
 
-def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, initial_radius, init_method='sample'):
+def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, initial_radius, init_method='sample', output_name='kohonen_results'):
     """
     Performs the complete analysis for Exercise 1.1 of the Kohonen Network:
     Loads data, trains the network, calculates metrics (U-Matrix, Hit Map), and generates plots.
@@ -38,24 +38,18 @@ def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, init
     print("\n[Tabla] Mapeo de Países a Neuronas (Asociación):")
     print(mapping_df.sort_values(by=['BMU_Row', 'BMU_Col']).to_string())
 
-    plot_u_matrix(u_matrix, map_rows, map_cols)
-    plot_hit_map(count_map, map_rows, map_cols)
-
-    try:
-        gdp_index = feature_names.index('GDP')
-        plot_component_plane(final_weights, gdp_index, feature_names[gdp_index], map_rows, map_cols)
-    except ValueError:
-        print("Advertencia: No se encontró la columna 'GDP' para el mapa de componente.")
+    plot_u_matrix(u_matrix, map_rows, map_cols, output_name)
+    plot_hit_map(count_map, map_rows, map_cols, output_name)
 
     try:
         print("\n--- Generando Gráficos de Componentes para todas las variables ---")
-        plot_all_component_planes(final_weights, feature_names, map_rows, map_cols)
+        plot_all_component_planes(final_weights, feature_names, map_rows, map_cols, output_name)
     except NameError:
         print(
             "Advertencia: No se pudo generar el mapa de todas las componentes. ¿Se agregó la función plot_all_component_planes a kohonen_graphs.py y se importó correctamente?")
 
     try:
-        plot_bmu_table(mapping_df, map_rows, map_cols)
+        plot_bmu_table(mapping_df, map_rows, map_cols, output_name)
     except NameError:
         print("Advertencia: No se pudo generar el PNG de la tabla. Revisar import y definición de plot_bmu_table.")
 
