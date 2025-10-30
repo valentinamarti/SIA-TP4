@@ -38,33 +38,4 @@ def load_and_preprocess_data(filepath):
 
     features_scaled = (features - media) / desviacion_estandar
     features_scaled_array = features_scaled.values
-
-    print("\n========================================================")
-    print("        DEBUGGING: DATOS ESTANDARIZADOS (Z-SCORE)       ")
-    print("========================================================")
-    print("1. Estadísticos (Media y Desv. Estándar):")
-    print(f"   Media: {media.to_string()}")
-    print(f"   Desv. Estándar: {desviacion_estandar.to_string()}")
-    print("-" * 50)
-
-    # Extraer y mostrar el vector estandarizado de ESPAÑA
-    try:
-        spain_row = features_scaled[paises == 'Spain']
-        germany_row = features_scaled[paises == 'Germany']
-
-        print(f"2. Vector Estandarizado de ESPAÑA (Problema):")
-        print(spain_row.to_string(float_format='%.4f'))
-        print("-" * 50)
-
-        print(f"3. Vector Estandarizado de ALEMANIA (Contraste):")
-        print(germany_row.to_string(float_format='%.4f'))
-        print("-" * 50)
-
-    except:
-        print("Advertencia: No se pudo encontrar España o Alemania en el DataFrame.")
-
-    print("========================================================")
-
-    # ----------------------------------------------
-
     return features_scaled_array, paises, feature_names
