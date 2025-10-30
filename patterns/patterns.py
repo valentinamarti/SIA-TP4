@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import matplotlib
 from graphs.patterns_graphs import summary_for_run
-from patterns.stored_paterns import A, E, J, N, S, build_patterns
+from patterns.stored_paterns import T, X, H, N, C, build_patterns
 matplotlib.use("Agg")  # para entornos sin display
 import matplotlib.pyplot as plt
 
@@ -183,3 +183,33 @@ def run_a(p_noise: float = 0.24, max_sweeps: int = 50, seed: int = 7) -> Dict[st
         show(x_rec, f"Final → '{best}' | sweeps={sweeps} | Hamming {dists} | Energía: {energy(W,x_rec):.1f}")
         summary_for_run(os.path.join(RUN_ROOT, f"assoc_{name}"),
                         os.path.join(SUM_ROOT, f"assoc_{name}_summary.png"))
+
+def run_b(p_noise: float = 0.24, max_sweeps: int = 50, seed: int = 7) -> Dict[str, str]:
+    """Ejecuta: render de patrones, asociaciones ruidosas y un caso espurio, con resúmenes por intento."""
+    rng = np.random.default_rng(seed)
+    patterns = build_patterns()
+    W = train_hebb(patterns)
+
+    # Estado espurio (mezcla) como ejemplo de (b)
+    set_run_label("spurious")
+    mix = np.sign(patterns["T"] + patterns["X"] + patterns["C"])
+    mix[mix == 0] = 1
+    very_noisy = flip_noise(mix, p=0.28, rng=rng)
+    show(very_noisy, f"Entrada muy ruidosa | Energía: {energy(W,very_noisy):.1f}")
+    x_spur, sweeps_sp = recall_async_until_convergence(W, very_noisy, max_sweeps=max_sweeps, verbose=True, rng=rng)
+    
+    # Verificar que el estado final es espurio (no coincide con ningún patrón almacenado)
+    dists = {n: hamming(x_spur, v) for n, v in patterns.items()}
+    min_dist = min(dists.values())
+    best_match = min(dists, key=dists.get)
+    
+    # Un estado espurio es uno que NO coincide exactamente con ningún patrón almacenado
+    is_spurious = min_dist > 0
+    spurious_status = "ESPURIOSO" if is_spurious else f"Coincide con '{best_match}'"
+    
+    show(x_spur, f"Estado final ({spurious_status}) | sweeps={sweeps_sp} | Hamming {dists} | Energía: {energy(W,x_spur):.1f}")
+    print(f"\nDistancia mínima a patrones almacenados: {min_dist} (a '{best_match}')")
+    print(f"Estado identificado como: {spurious_status}")
+    
+    summary_for_run(os.path.join(RUN_ROOT, "spurious"),
+                    os.path.join(SUM_ROOT, "spurious_summary.png"))

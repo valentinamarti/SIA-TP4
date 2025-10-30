@@ -2,3 +2,12 @@
 .idea/
 data/*
 results/*
+venv
+hopfield_runs/*
+hopfield_run_summaries/*
+results/*
+parser/*
+europe/*
+graphs/*
+patterns/*
+utils/*
