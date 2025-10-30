@@ -59,7 +59,7 @@ class KohonenNet:
         return bmu_index
 
 
-    def _calculate_learning_params(self, t, T, initial_eta, initial_radius, sigma_0):
+    def _calculate_learning_params(self, t, T, initial_eta, initial_radius):
         """
         Calculates the decaying neighborhood radius and learning rate.
 
@@ -70,11 +70,10 @@ class KohonenNet:
         :param sigma_0: Time constant for exponential decay.
         :return: current_radius, current_learning_rate
         """
-        # R(t) = R_0 * exp(-t / sigma_0)
+        sigma_0 = T / np.log(initial_radius)
         radius = initial_radius * np.exp(-t / sigma_0)
 
-        # eta(t) = eta_0 * (1 - t / T)
-        learning_rate = initial_eta * (1.0 - t / T)
+        learning_rate = initial_eta * np.exp(-t / sigma_0)
 
         return radius, learning_rate
 
@@ -125,7 +124,7 @@ class KohonenNet:
             for x_p in X:
                 # Calculate (R(t) y eta(t))
                 radius, learning_rate = self._calculate_learning_params(
-                    t, T, initial_eta, initial_radius, sigma_0
+                    t, T, initial_eta, initial_radius
                 )
 
                 bmu_idx = self._find_bmu(x_p)

@@ -34,8 +34,8 @@ def plot_circle_map(map_values, rows, cols, title, label, cmap, plot_type: str, 
 
     x_coords, y_coords = _get_staggered_coords(rows, cols, radius_data_units=circle_radius)
 
-    fig_width = 7.0
-    fig_height = 6.5
+    fig_width = 10.0
+    fig_height = 8.5
     plt.figure(figsize=(fig_width, fig_height))
     ax = plt.gca()
 
@@ -56,7 +56,7 @@ def plot_circle_map(map_values, rows, cols, title, label, cmap, plot_type: str, 
     plt.title(title, fontsize=14)
 
 
-    margin = circle_radius * 1.05
+    margin = circle_radius * 1.2
     x_min = x_coords.min() - margin
     x_max = x_coords.max() + margin
     y_min = y_coords.min() - margin
@@ -114,66 +114,95 @@ def plot_component_plane(weights, feature_index, feature_name, rows, cols):
                     plot_type='component',
                     filename=filename)
 
+
 def plot_all_component_planes(weights, feature_names, map_rows, map_cols):
     """
-    Generates and saves heatmaps for all component planes (one for each feature).
+    Genera y guarda un gráfico multi-panel de círculos escalonados
+    (Component Planes) para todas las variables de entrada.
 
-    :param weights: The final weight matrix. (N_neurons x INPUT_DIM o map_rows x map_cols x INPUT_DIM).
-    :param feature_names: List of feature names.
-    :param map_rows: Number of grid rows.
-    :param map_cols: Number of grid columns.
+    :param weights: La matriz de pesos final. Se espera (N_neuronas x INPUT_DIM) o (map_rows, map_cols, INPUT_DIM).
+    :param feature_names: Lista de nombres de las características.
+    :param map_rows: Número de filas de la grilla.
+    :param map_cols: Número de columnas de la grilla.
     """
     import matplotlib.pyplot as plt
     import numpy as np
+    import os
 
-    # === INICIO DE LA CORRECCIÓN ===
-    # Si los pesos son 2D, se reestructuran a 3D: (map_rows, map_cols, N_features)
-    if weights.ndim == 2:
-        try:
-            INPUT_DIM = weights.shape[1]
-            weights = weights.reshape(map_rows, map_cols, INPUT_DIM)
-        except ValueError:
-            print(
-                "Error: No se pudo reestructurar la matriz de pesos 2D a la forma (map_rows, map_cols, INPUT_DIM).")
-            return
+    circle_radius = 0.8
+    marker_size = 1000
+    cmap = 'coolwarm'
 
-    if weights.ndim != 3:
-        print("Error: La matriz de pesos no tiene la dimensión esperada (3D) después de intentar reestructurarla.")
+
+    if weights.ndim == 3:
+        weights_2d = weights.reshape(map_rows * map_cols, weights.shape[2])
+    elif weights.ndim == 2:
+        weights_2d = weights
+    else:
+        print("Error: La matriz de pesos no tiene la dimensión esperada (2D o 3D).")
         return
 
-    num_features = weights.shape[2]
-    # === FIN DE LA CORRECCIÓN ===
+    num_features = weights_2d.shape[1]
 
-    # Determinar el layout de subplots
-    cols = 3
-    rows = int(np.ceil(num_features / cols))
+    x_coords, y_coords = _get_staggered_coords(map_rows, map_cols, radius_data_units=circle_radius)
 
-    fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
-    axes = axes.flatten()
+    cols_layout = 3
+    rows_layout = int(np.ceil(num_features / cols_layout))
+
+    fig, axes = plt.subplots(rows_layout, cols_layout, figsize=(5 * cols_layout, 5 * rows_layout))
+    axes = axes.flatten()  # Asegura que sea un array 1D para iterar
 
     for i in range(num_features):
         ax = axes[i]
 
-        # Esta línea ahora funciona porque 'weights' es 3D
-        component_plane = weights[:, :, i]
+        component_plane_values = weights_2d[:, i]
 
-        # Usar imshow para el mapa de calor
-        im = ax.imshow(component_plane, cmap='viridis', aspect='auto')
-        ax.set_title(feature_names[i], fontsize=8)
-        ax.set_xticks([])
-        ax.set_yticks([])
+        # Normalización local (por feature) para maximizar el contraste
+        vmax = np.abs(component_plane_values).max()
+        norm = plt.Normalize(vmin=-vmax, vmax=vmax)
 
-        # Agregar colorbar a cada subplot
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, aspect=10, shrink=0.8)
+        # Graficar los círculos
+        im = ax.scatter(x_coords, y_coords,
+                        s=marker_size,
+                        c=component_plane_values,
+                        cmap=cmap,
+                        marker='o',
+                        edgecolor='black',
+                        linewidths=0.5,
+                        norm=norm)
 
-    # Ocultar ejes no utilizados
+        # Configurar Subplot
+        feature_name = feature_names[i]
+        ax.set_title(f'Component: {feature_name}', fontsize=12)
+
+        # Ajustar límites y aspecto del gráfico
+        margin = circle_radius * 1.05
+        x_min = x_coords.min() - margin
+        x_max = x_coords.max() + margin
+        y_min = y_coords.min() - margin
+        y_max = y_coords.max() + margin
+
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(y_min, y_max)
+        ax.set_aspect('equal', adjustable='box')
+        ax.axis('off')
+
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04, aspect=10, shrink=0.8,
+                     label=f'Standardized Weight ({feature_name})')
+
     for j in range(num_features, len(axes)):
         fig.delaxes(axes[j])
 
-    plt.tight_layout()
-    filename = f'./results/all_component_planes.png'
-    plt.savefig(filename)
-    print(f"Graph saved to: {filename}")
+    plt.suptitle('All Component Planes - Compact Topology', fontsize=16, y=1.02)
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
+
+    # Guardar gráfico
+    results_dir = './results'
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    filename = f'{results_dir}/all_component_planes.png'
+    plt.savefig(filename, bbox_inches='tight')
     plt.close(fig)
 
 

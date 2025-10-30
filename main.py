@@ -18,11 +18,11 @@ def execute_pca_analysis(filepath: str) -> None:
 def execute_kohonen_analysis(filepath):
     """Exercise 1.1"""
     kohonen_params = {
-        'map_rows': 6,
-        'map_cols': 6,
-        'epochs': 400,
+        'map_rows': 8,
+        'map_cols': 8,
+        'epochs': 5000,
         'initial_eta': 0.5,
-        'initial_radius': 3.0,
+        'initial_radius': 4.0,
         'init_method': 'sample'
     }
     final_weights, mapping_df = run_kohonen_analysis(
