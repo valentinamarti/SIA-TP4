@@ -112,16 +112,14 @@ class KohonenNet:
         T = epochs * N_samples
 
         self._initialize_weights(X, init_method)
-        sigma_0 = T / math.log(initial_radius)
 
         t = 0
 
         print(f"Iniciando la red de Kohonen ({self.rows}x{self.cols}). T_total={T} pasos.")
 
         for epoch in range(epochs):
-            np.random.shuffle(X)
-
-            for x_p in X:
+            # Iterate over a shuffled view to avoid mutating the original X order
+            for x_p in X[np.random.permutation(N_samples)]:
                 # Calculate (R(t) y eta(t))
                 radius, learning_rate = self._calculate_learning_params(
                     t, T, initial_eta, initial_radius

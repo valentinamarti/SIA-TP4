@@ -34,6 +34,15 @@ def plot_circle_map(map_values, rows, cols, title, label, cmap, plot_type: str, 
 
     x_coords, y_coords = _get_staggered_coords(rows, cols, radius_data_units=circle_radius)
 
+    # Ensure values are a flat array matching the coordinate order (row-major)
+    map_values = np.asarray(map_values)
+    if map_values.ndim == 2:
+        map_values = map_values.reshape(rows * cols)
+    elif map_values.ndim == 1 and map_values.size == rows * cols:
+        pass
+    else:
+        map_values = map_values.reshape(rows * cols)
+
     fig_width = 10.0
     fig_height = 8.5
     plt.figure(figsize=(fig_width, fig_height))
