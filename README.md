@@ -68,5 +68,5 @@ Este comando requiere el argumento de ruido (`noise`) como *float* y la ruta al 
 
 | Tarea | Comando de Ejecución (Ejemplo)                                       |
 | :--- |:---------------------------------------------------------------------|
-| **Asociación de Patrones** (Convergencia) | python main.py hopfield  [VALOR_BAJO_NOISE]                          |
-| **Estado Espúreo** (Patrón Ruidoso) | python main.py hopfield [VALOR_BAJO_NOISE] [RUTA_DEL_ARCHIVO_PATRON] |
+| **Asociación de Patrones** (Convergencia) | python main.py hopfield  [NOISE] a                          |
+| **Estado Espúreo** (Patrón Ruidoso) | python main.py hopfield [NOISE] b
