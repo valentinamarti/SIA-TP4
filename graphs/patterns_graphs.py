@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import matplotlib
-from patterns.stored_paterns import A,E,J,S
+from patterns.stored_paterns import T, X, H, C
 import matplotlib.pyplot as plt
 try:
     from PIL import Image

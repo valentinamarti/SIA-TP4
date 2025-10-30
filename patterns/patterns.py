@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 import matplotlib
 from graphs.patterns_graphs import summary_for_run
-from patterns.stored_paterns import A, E, J, N, S, build_patterns
+from patterns.stored_paterns import T, X, H, N, C, build_patterns
 matplotlib.use("Agg")  # para entornos sin display
 import matplotlib.pyplot as plt
 
@@ -192,7 +192,7 @@ def run_b(p_noise: float = 0.24, max_sweeps: int = 50, seed: int = 7) -> Dict[st
 
     # Estado espurio (mezcla) como ejemplo de (b)
     set_run_label("spurious")
-    mix = np.sign(patterns["A"] + patterns["E"] + patterns["S"])
+    mix = np.sign(patterns["T"] + patterns["X"] + patterns["C"])
     mix[mix == 0] = 1
     very_noisy = flip_noise(mix, p=0.28, rng=rng)
     show(very_noisy, f"Entrada muy ruidosa | Energía: {energy(W,very_noisy):.1f}")
