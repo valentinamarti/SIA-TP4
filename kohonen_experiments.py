@@ -91,8 +91,8 @@ def run_experiments_with_group_plots(filepath, exper1iments):
         start_time = time.time()
         
         # Determinar si necesitamos tracking por época
-        # Grupo 1 (1-2): Inicialización, Grupo 2 (3-4): Radio adaptativo, Grupo 3 (5-6): Eta adaptativo
-        track_epochs = (i in [1, 2, 3, 4, 5, 6])
+        # Grupo 1 (1-2): Inicialización, Grupo 2 (3-5): Radio adaptativo, Grupo 3 (6-8): Eta adaptativo
+        track_epochs = (i in [1, 2, 3, 4, 5, 6, 7, 8])
         
         # Inicializar y entrenar red
         net = KohonenNet(params['map_rows'], params['map_cols'], INPUT_DIM)
@@ -195,14 +195,14 @@ def run_experiments_with_group_plots(filepath, exper1iments):
     if len(init_exps) == 2:
         plot_init_comparison(init_exps, results_df)
     
-    # --- GRUPO 2: Adaptación del Radio (Experimentos 3-4) ---
+    # --- GRUPO 2: Adaptación del Radio (Experimentos 3-5) ---
     radius_exps = [exp for exp in experiment_details if exp['exp_num'] in [3, 4, 5]]
-    if len(radius_exps) == 3:
+    if len(radius_exps) >= 2:
         plot_radius_comparison(radius_exps, results_df)
     
-    # --- GRUPO 3: Adaptación de Eta (Experimentos 5-6) ---
+    # --- GRUPO 3: Adaptación de Eta (Experimentos 6-8) ---
     eta_exps = [exp for exp in experiment_details if exp['exp_num'] in [6, 7, 8]]
-    if len(eta_exps) == 3:
+    if len(eta_exps) >= 2:
         plot_eta_comparison(eta_exps, results_df)
     
     # --- GRUPO 4: Tamaño del Mapa (Experimentos 7-10) ---
@@ -292,40 +292,49 @@ def plot_radius_comparison(experiments, results_df):
     if not os.path.exists(group_folder):
         os.makedirs(group_folder)
     
-    # Filtrar resultados (experimentos 3-4)
+    # Filtrar resultados (experimentos 3-5)
     radius_df = results_df[
-        results_df['Experiment'].str.extract(r'exp_(\d+)_')[0].astype(int).isin([3, 4])
+        results_df['Experiment'].str.extract(r'exp_(\d+)_')[0].astype(int).isin([3, 4, 5])
     ]
     
-    radius_exps = [exp for exp in experiments if exp['exp_num'] in [3, 4]]
+    radius_exps = [exp for exp in experiments if exp['exp_num'] in [3, 4, 5]]
     
     # QE Barplot
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 6))
     sns.barplot(data=radius_df, x='Custom_Name', y='QE', palette='Blues_r')
-    plt.title('Quantization Error (QE) - Adaptación de Radio: ON vs OFF\n↓ menor es mejor')
+    plt.title('Quantization Error (QE) - Adaptación de Radio\n↓ menor es mejor')
     plt.xlabel('Configuración de Radio')
     plt.ylabel('Quantization Error (QE)')
+    plt.xticks(rotation=15, ha='right')
     plt.tight_layout()
     plt.savefig(f'{group_folder}/QE_comparison.png', bbox_inches='tight', dpi=150)
     plt.close()
     
     # TE Barplot
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 6))
     sns.barplot(data=radius_df, x='Custom_Name', y='TE', palette='Reds_r')
-    plt.title('Topographic Error (TE) - Adaptación de Radio: ON vs OFF\n↓ menor es mejor')
+    plt.title('Topographic Error (TE) - Adaptación de Radio\n↓ menor es mejor')
     plt.xlabel('Configuración de Radio')
     plt.ylabel('Topographic Error (TE)')
+    plt.xticks(rotation=15, ha='right')
     plt.tight_layout()
     plt.savefig(f'{group_folder}/TE_comparison.png', bbox_inches='tight', dpi=150)
     plt.close()
     
     # === ANÁLISIS TOPOLÓGICO: U-Matrix comparativo ===
-    if len(radius_exps) == 2:
-        fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+    n_exps = len(radius_exps)
+    if n_exps >= 2:
+        # Ajustar layout según número de experimentos
+        if n_exps == 2:
+            fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+        else:  # 3 o más experimentos
+            fig, axes = plt.subplots(1, n_exps, figsize=(6*n_exps, 7))
+        
+        if n_exps == 1:
+            axes = [axes]
         
         for idx, exp in enumerate(radius_exps):
             u_matrix = exp['u_matrix']
-            rows, cols = exp['params']['map_rows'], exp['params']['map_cols']
             
             im = axes[idx].imshow(u_matrix, cmap='viridis', aspect='auto')
             axes[idx].set_title(f'U-Matrix - {exp["exp_custom_name"]}\n(Adaptativo debería ser más suave)')
@@ -380,9 +389,9 @@ def plot_eta_comparison(experiments, results_df):
     if not os.path.exists(group_folder):
         os.makedirs(group_folder)
     
-    # Filtrar resultados (experimentos 5-6)
+    # Filtrar resultados (experimentos 6-8)
     eta_df = results_df[
-        results_df['Experiment'].str.extract(r'exp_(\d+)_')[0].astype(int).isin([5, 6])
+        results_df['Experiment'].str.extract(r'exp_(\d+)_')[0].astype(int).isin([6, 7, 8])
     ]
     
     # QE por época (línea) - si tenemos historial
@@ -418,17 +427,19 @@ def plot_eta_comparison(experiments, results_df):
     plt.close()
     
     # Final QE/TE bars
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     
     sns.barplot(data=eta_df, x='Custom_Name', y='QE', palette='Blues_r', ax=axes[0])
     axes[0].set_title('QE Final - Adaptación de η\n↓ menor es mejor')
     axes[0].set_xlabel('Configuración de η')
     axes[0].set_ylabel('Quantization Error (QE)')
+    axes[0].tick_params(axis='x', rotation=15)
     
     sns.barplot(data=eta_df, x='Custom_Name', y='TE', palette='Reds_r', ax=axes[1])
     axes[1].set_title('TE Final - Adaptación de η\n↓ menor es mejor')
     axes[1].set_xlabel('Configuración de η')
     axes[1].set_ylabel('Topographic Error (TE)')
+    axes[1].tick_params(axis='x', rotation=15)
     
     plt.tight_layout()
     plt.savefig(f'{group_folder}/final_QE_TE.png', bbox_inches='tight', dpi=150)
@@ -568,15 +579,15 @@ experiments = [
 
     # --- Adaptación del radio: activado vs desactivado
     {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
-     'initial_eta': 0.5, 'initial_radius': 3.0,
+     'initial_eta': 0.5, 'initial_radius': 3,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Radio Adaptativo ON'},
     {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
-     'initial_eta': 0.5, 'initial_radius': 3.0,
+     'initial_eta': 0.5, 'initial_radius': 3,
      'eta_adaptive': True, 'radius_adaptive': False,
      'init_method': 'sample', 'exp_name': 'Radio Adaptativo OFF'},
     {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
-     'initial_eta': 0.5, 'initial_radius': 1.0,
+     'initial_eta': 0.5, 'initial_radius': 2,
      'eta_adaptive': True, 'radius_adaptive': False,
      'init_method': 'sample', 'exp_name': 'Radio Adaptativo OFF'},
 
