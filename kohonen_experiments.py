@@ -15,11 +15,11 @@ def get_group_folder(exp_num):
     """Determina la carpeta de grupo según el número de experimento"""
     if exp_num in [1, 2]:
         return 'grupo1_inicializacion'
-    elif exp_num in [3, 4]:
+    elif exp_num in [3, 4, 5]:
         return 'grupo2_radio_adaptativo'
-    elif exp_num in [5, 6]:
+    elif exp_num in [6, 7, 8]:
         return 'grupo3_eta_adaptativo'
-    elif exp_num in [7, 8, 9, 10]:
+    elif exp_num in [9, 10, 11, 12]:
         return 'grupo4_tamano_mapa'
     else:
         return 'otros'
@@ -196,17 +196,17 @@ def run_experiments_with_group_plots(filepath, exper1iments):
         plot_init_comparison(init_exps, results_df)
     
     # --- GRUPO 2: Adaptación del Radio (Experimentos 3-4) ---
-    radius_exps = [exp for exp in experiment_details if exp['exp_num'] in [3, 4]]
-    if len(radius_exps) == 2:
+    radius_exps = [exp for exp in experiment_details if exp['exp_num'] in [3, 4, 5]]
+    if len(radius_exps) == 3:
         plot_radius_comparison(radius_exps, results_df)
     
     # --- GRUPO 3: Adaptación de Eta (Experimentos 5-6) ---
-    eta_exps = [exp for exp in experiment_details if exp['exp_num'] in [5, 6]]
-    if len(eta_exps) == 2:
+    eta_exps = [exp for exp in experiment_details if exp['exp_num'] in [6, 7, 8]]
+    if len(eta_exps) == 3:
         plot_eta_comparison(eta_exps, results_df)
     
     # --- GRUPO 4: Tamaño del Mapa (Experimentos 7-10) ---
-    size_exps = [exp for exp in experiment_details if exp['exp_num'] in [7, 8, 9, 10]]
+    size_exps = [exp for exp in experiment_details if exp['exp_num'] in [9, 10, 11, 12]]
     if len(size_exps) >= 2:
         plot_size_comparison(size_exps, results_df)
     
@@ -558,48 +558,56 @@ def plot_size_comparison(experiments, results_df):
 experiments = [
     # --- Inicialización: random vs sample
     {'map_rows': 4, 'map_cols': 4, 'epochs': 50,
-     'initial_eta': 0.5, 'initial_radius': 4.0,
+     'initial_eta': 0.5, 'initial_radius': 2.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'random', 'exp_name': 'Init - Random'},
     {'map_rows': 4, 'map_cols': 4, 'epochs': 50,
-     'initial_eta': 0.5, 'initial_radius': 4.0,
+     'initial_eta': 0.5, 'initial_radius': 2.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Init - Sample'},
 
     # --- Adaptación del radio: activado vs desactivado
-    {'map_rows': 4, 'map_cols': 4, 'epochs': 300,
-     'initial_eta': 0.5, 'initial_radius': 4.0,
+    {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
+     'initial_eta': 0.5, 'initial_radius': 3.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Radio Adaptativo ON'},
-    {'map_rows': 4, 'map_cols': 4, 'epochs': 300,
-     'initial_eta': 0.5, 'initial_radius': 4.0,
+    {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
+     'initial_eta': 0.5, 'initial_radius': 3.0,
+     'eta_adaptive': True, 'radius_adaptive': False,
+     'init_method': 'sample', 'exp_name': 'Radio Adaptativo OFF'},
+    {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
+     'initial_eta': 0.5, 'initial_radius': 1.0,
      'eta_adaptive': True, 'radius_adaptive': False,
      'init_method': 'sample', 'exp_name': 'Radio Adaptativo OFF'},
 
     # --- Adaptación de la tasa de aprendizaje (eta): activado vs desactivado
-    {'map_rows': 4, 'map_cols': 4, 'epochs': 300,
+    {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
      'initial_eta': 0.5, 'initial_radius': 4.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Eta Adaptativo ON'},
-    {'map_rows': 4, 'map_cols': 4, 'epochs': 300,
+    {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
+     'initial_eta': 0.75, 'initial_radius': 4.0,
+     'eta_adaptive': False, 'radius_adaptive': True,
+     'init_method': 'sample', 'exp_name': 'Eta Adaptativo OFF'},
+    {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
      'initial_eta': 0.5, 'initial_radius': 4.0,
      'eta_adaptive': False, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Eta Adaptativo OFF'},
 
     # --- Tamaño del mapa: variaciones
-    {'map_rows': 3, 'map_cols': 3, 'epochs': 300,
+    {'map_rows': 3, 'map_cols': 3, 'epochs': 100,
      'initial_eta': 0.5, 'initial_radius': 4.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Mapa 3x3'},
-    {'map_rows': 4, 'map_cols': 4, 'epochs': 300,
+    {'map_rows': 4, 'map_cols': 4, 'epochs': 100,
      'initial_eta': 0.5, 'initial_radius': 4.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Mapa 4x4'},
-    {'map_rows': 5, 'map_cols': 5, 'epochs': 300,
+    {'map_rows': 5, 'map_cols': 5, 'epochs': 100,
      'initial_eta': 0.5, 'initial_radius': 5.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Mapa 5x5'},
-    {'map_rows': 6, 'map_cols': 6, 'epochs': 300,
+    {'map_rows': 6, 'map_cols': 6, 'epochs': 100,
      'initial_eta': 0.5, 'initial_radius': 6.0,
      'eta_adaptive': True, 'radius_adaptive': True,
      'init_method': 'sample', 'exp_name': 'Mapa 6x6'},
