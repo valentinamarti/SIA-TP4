@@ -254,3 +254,48 @@ class KohonenNet:
             mapping_data['BMU_Col'].append(bmu_col)
 
         return pd.DataFrame(mapping_data)
+
+    def calculate_quantization_error(self, X):
+        """
+        Calculates the Quantization Error (QE).
+        QE = average Euclidean distance between each input and its BMU weight vector.
+        """
+        if self.weights is None:
+            raise RuntimeError("Train the network before computing Quantization Error.")
+
+        total_error = 0.0
+        for x_p in X:
+            bmu_idx = self._find_bmu(x_p)
+            w_bmu = self.weights[bmu_idx]
+            total_error += np.linalg.norm(x_p - w_bmu)
+
+        qe = total_error / X.shape[0]
+        return qe
+
+
+    def calculate_topographic_error(self, X):
+        """
+        Calculates the Topographic Error (TE).
+        TE = fraction of samples whose first and second BMUs are not adjacent on the grid.
+        """
+        if self.weights is None:
+            raise RuntimeError("Train the network before computing Topographic Error.")
+
+        num_samples = X.shape[0]
+        error_count = 0
+
+        for x_p in X:
+            # Compute distances to all neurons
+            distances = np.linalg.norm(self.weights - x_p, axis=1)
+            bmu_indices = np.argsort(distances)[:2]  # Best and 2nd best
+            bmu1 = self.neuron_coords[bmu_indices[0]]
+            bmu2 = self.neuron_coords[bmu_indices[1]]
+
+            # Manhattan distance between both BMUs
+            grid_distance = np.abs(bmu1[0] - bmu2[0]) + np.abs(bmu1[1] - bmu2[1])
+
+            if grid_distance > 1:
+                error_count += 1
+
+        te = error_count / num_samples
+        return te

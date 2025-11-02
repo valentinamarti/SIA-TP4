@@ -1,9 +1,15 @@
 import pandas as pd
+import seaborn as sns
+import os
+import matplotlib.pyplot as plt
+import time
+
 
 from europe.kohonen_net import KohonenNet
 from graphs.kohonen_graphs import plot_u_matrix, plot_hit_map, plot_component_plane, plot_all_component_planes, \
     plot_bmu_table
 from parser.parser import load_and_preprocess_data
+
 
 
 def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, initial_radius, eta_adaptive=True, radius_adaptive=True, init_method='sample', output_name='kohonen_results'):
@@ -59,3 +65,137 @@ def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, init
 
     # Retorna los pesos finales y el mapeo para futuras referencias si es necesario
     return final_weights, mapping_df
+
+def run_kohonen_analysis_experiments(filepath, experiments, output_prefix="kohonen_experiments", plot_experiments=None):
+    """
+    Ejecuta múltiples experimentos de Kohonen desde cero (sin llamar a run_kohonen_analysis),
+    calculando QE y TE, generando mapas y gráficos comparativos.
+
+    :param filepath: Ruta al archivo CSV (ej: 'data/europe.csv')
+    :param experiments: Lista de diccionarios de parámetros.
+    :param output_prefix: Prefijo base para guardar resultados y gráficos.
+    :param plot_experiments: Lista de índices de experimentos (1-based) para incluir en gráficos comparativos. 
+                             Si es None, incluye todos los experimentos.
+    :return: DataFrame con los resultados (QE, TE, tiempos, etc.)
+    """
+
+    if not os.path.exists("./results"):
+        os.makedirs("./results")
+
+    print(f"\n🚀 Ejecutando {len(experiments)} experimentos de Kohonen...\n")
+
+    # === Cargar y preparar los datos ===
+    X_scaled, countries, feature_names = load_and_preprocess_data(filepath)
+    INPUT_DIM = X_scaled.shape[1]
+    print(f"Datos cargados. Países={len(countries)}, Features={INPUT_DIM}")
+
+    all_results = []
+
+    for i, params in enumerate(experiments, start=1):
+        exp_name = f"exp_{i}_{params['map_rows']}x{params['map_cols']}_eta{params['initial_eta']}_{params['init_method']}"
+        print(f"\n🔹 [{i}/{len(experiments)}] Ejecutando experimento: {exp_name}")
+
+        start_time = time.time()
+
+        # --- 1️⃣ Inicializar y entrenar red ---
+        net = KohonenNet(params['map_rows'], params['map_cols'], INPUT_DIM)
+        final_weights = net.fit(
+            X=X_scaled,
+            epochs=params['epochs'],
+            initial_eta=params['initial_eta'],
+            initial_radius=params['initial_radius'],
+            init_method=params.get('init_method', 'sample'),
+            eta_adaptive=params.get('eta_adaptive', True),
+            radius_adaptive=params.get('radius_adaptive', True)
+        )
+
+        # --- 2️⃣ Calcular métricas individuales ---
+        count_map = net.calculate_hit_map(X_scaled)
+        u_matrix = net.calculate_u_matrix()
+        mapping_df = net.map_data_to_bmus(X_scaled, countries)
+        qe = net.calculate_quantization_error(X_scaled)
+        te = net.calculate_topographic_error(X_scaled)
+
+        duration = round(time.time() - start_time, 2)
+
+        print(f"  ✓ QE={qe:.4f}, TE={te:.4f}, tiempo={duration}s")
+
+        # --- 3️⃣ Guardar gráficos individuales ---
+        plot_u_matrix(u_matrix, params['map_rows'], params['map_cols'], exp_name)
+        plot_hit_map(count_map, params['map_rows'], params['map_cols'], exp_name)
+        plot_all_component_planes(final_weights, feature_names, params['map_rows'], params['map_cols'], exp_name)
+        plot_bmu_table(mapping_df, params['map_rows'], params['map_cols'], exp_name)
+
+        # --- 4️⃣ Guardar resultados numéricos ---
+        all_results.append({
+            'Experiment': exp_name,
+            'Rows': params['map_rows'],
+            'Cols': params['map_cols'],
+            'MapSize': params['map_rows'] * params['map_cols'],
+            'Epochs': params['epochs'],
+            'Initial_eta': params['initial_eta'],
+            'Initial_radius': params['initial_radius'],
+            'Eta_adaptive': params.get('eta_adaptive', True),
+            'Radius_adaptive': params.get('radius_adaptive', True),
+            'Init_method': params.get('init_method', 'sample'),
+            'QE': round(qe, 4),
+            'TE': round(te, 4),
+            'Execution_s': duration
+        })
+
+    # --- 5️⃣ Consolidar y guardar resumen ---
+    results_df = pd.DataFrame(all_results)
+    timestamp = time.strftime('%Y%m%d_%H%M%S')
+    csv_path = f"./results/{output_prefix}_results_{timestamp}.csv"
+    results_df.to_csv(csv_path, index=False)
+    print(f"\n✅ Todos los experimentos completados. Resultados guardados en {csv_path}")
+
+    # =====================================================
+    # === 6️⃣ GRÁFICOS COMPARATIVOS AUTOMÁTICOS (QE, TE) ===
+    # =====================================================
+    
+    # Filtrar resultados para gráficos comparativos si se especifica
+    plot_df = results_df.copy()
+    if plot_experiments is not None:
+        # Filtrar por experimentos específicos (los nombres de experimento tienen el formato exp_N_...)
+        plot_df = results_df[results_df['Experiment'].str.extract(r'exp_(\d+)_')[0].astype(int).isin(plot_experiments)]
+        if plot_df.empty:
+            print(f"\n⚠️  Advertencia: No se encontraron experimentos con índices {plot_experiments}. Generando gráficos para todos los experimentos.")
+            plot_df = results_df.copy()
+    
+    if not plot_df.empty:
+        sns.set(style="whitegrid", context="talk")
+
+        # --- QE Barplot ---
+        plt.figure(figsize=(10, 6))
+        sns.barplot(
+            data=plot_df.sort_values(by="QE", ascending=True),
+            x="Experiment", y="QE", palette="Blues_r"
+        )
+        plt.xticks(rotation=45, ha="right")
+        plt.title("Quantization Error (QE) por Experimento")
+        plt.xlabel("Experimento")
+        plt.ylabel("Quantization Error (QE)")
+        plt.tight_layout()
+        plt.savefig(f"./results/{output_prefix}_QE_barplot.png", bbox_inches="tight")
+        plt.close()
+
+        # --- TE Barplot ---
+        plt.figure(figsize=(10, 6))
+        sns.barplot(
+            data=plot_df.sort_values(by="TE", ascending=True),
+            x="Experiment", y="TE", palette="Reds_r"
+        )
+        plt.xticks(rotation=45, ha="right")
+        plt.title("Topographic Error (TE) por Experimento")
+        plt.xlabel("Experimento")
+        plt.ylabel("Topographic Error (TE)")
+        plt.tight_layout()
+        plt.savefig(f"./results/{output_prefix}_TE_barplot.png", bbox_inches="tight")
+        plt.close()
+
+        print("\n📊 Gráficos comparativos generados en ./results/:")
+        print(f"  - {output_prefix}_QE_barplot.png")
+        print(f"  - {output_prefix}_TE_barplot.png")
+
+    return results_df

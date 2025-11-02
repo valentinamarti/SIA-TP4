@@ -95,19 +95,19 @@ if __name__ == "__main__":
     parser_kohonen.add_argument(
         "--rows",
         type=int,
-        default=2,
+        default=5,
         help="Cantidad de filas del mapa de Kohonen (map_rows). Default: 2."
     )
     parser_kohonen.add_argument(
         "--cols",
         type=int,
-        default=2,
+        default=5,
         help="Cantidad de columnas del mapa de Kohonen (map_cols). Default: 2."
     )
     parser_kohonen.add_argument(
         "--epochs",
         type=int,
-        default=5000,
+        default=300,
         help="Cantidad de épocas de entrenamiento. Default: 5000."
     )
     parser_kohonen.add_argument(
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     parser_kohonen.add_argument(
         "--radius",
         type=float,
-        default=4.0,
+        default=3.0,
         help="Radio inicial de vecindario (initial_radius). Default: 4.0."
     )
     parser_kohonen.add_argument(
