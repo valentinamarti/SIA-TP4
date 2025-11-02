@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator, FuncFormatter
 import numpy as np
 import os
 from typing import Optional
@@ -63,7 +64,12 @@ def plot_circle_map(map_values, rows, cols, title, label, cmap, plot_type: str, 
                 linewidths=0.5,
                 norm=norm)
 
-    plt.colorbar(label=label, ax=ax)
+    cbar = plt.colorbar(label=label, ax=ax)
+    # Si es un hit_map (count_map), usar solo enteros en el colorbar
+    if plot_type == 'hit_map':
+        # Configurar el colorbar para mostrar solo enteros
+        cbar.locator = MaxNLocator(integer=True)
+        cbar.update_ticks()
     plt.title(title, fontsize=14)
 
 

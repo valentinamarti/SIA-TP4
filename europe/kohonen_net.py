@@ -37,7 +37,7 @@ class KohonenNet:
         num_neurons = self.rows * self.cols
 
         if init_method == 'random':
-            self.weights = np.random.uniform(low=-1.0, high=1.0, size=(self.rows * self.cols, self.input_dim))
+            self.weights = np.random.uniform(low=-3.0, high=3.0, size=(self.rows * self.cols, self.input_dim))
         elif init_method == 'sample':
             allow_replace = num_neurons > num_samples
             idx = np.random.choice(num_samples, size=num_neurons, replace=allow_replace)

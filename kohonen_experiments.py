@@ -79,6 +79,7 @@ def run_experiments_with_group_plots(filepath, exper1iments):
     
     all_results = []
     experiment_details = []
+    group1_runs = []  # Para almacenar múltiples corridas del grupo 1
     
     # Ejecutar todos los experimentos
     for i, params in enumerate(experiments, start=1):
@@ -88,95 +89,122 @@ def run_experiments_with_group_plots(filepath, exper1iments):
         
         print(f"\n🔹 [{i}/{len(experiments)}] {exp_custom_name}")
         
-        start_time = time.time()
-        
         # Determinar si necesitamos tracking por época
         # Grupo 1 (1-2): Inicialización, Grupo 2 (3-5): Radio adaptativo, Grupo 3 (6-8): Eta adaptativo
         track_epochs = (i in [1, 2, 3, 4, 5, 6, 7, 8])
         
-        # Inicializar y entrenar red
-        net = KohonenNet(params['map_rows'], params['map_cols'], INPUT_DIM)
-        if track_epochs:
-            final_weights, qe_history, te_history = fit_with_tracking(
-                net, X_scaled, params['epochs'], params['initial_eta'], 
-                params['initial_radius'], params.get('init_method', 'sample'),
-                params.get('eta_adaptive', True), params.get('radius_adaptive', True),
-                track_per_epoch=True
-            )
-        else:
-            final_weights = net.fit(
-                X=X_scaled,
-                epochs=params['epochs'],
-                initial_eta=params['initial_eta'],
-                initial_radius=params['initial_radius'],
-                init_method=params.get('init_method', 'sample'),
-                eta_adaptive=params.get('eta_adaptive', True),
-                radius_adaptive=params.get('radius_adaptive', True)
-            )
-            qe_history = []
-            te_history = []
+        # Determinar si es grupo 1 (necesita múltiples corridas)
+        is_group1 = (i in [1, 2])
+        num_runs = 20 if is_group1 else 1
         
-        # Calcular métricas finales
-        count_map = net.calculate_hit_map(X_scaled)
-        u_matrix = net.calculate_u_matrix()
-        qe = net.calculate_quantization_error(X_scaled)
-        te = net.calculate_topographic_error(X_scaled)
-        
-        duration = round(time.time() - start_time, 2)
-        
-        print(f"  ✓ QE={qe:.4f}, TE={te:.4f}, tiempo={duration}s")
-        
-        # Crear carpeta de grupo si no existe
-        group_folder = get_group_folder(exp_num)
-        group_path = f"./results/{group_folder}"
-        if not os.path.exists(group_path):
-            os.makedirs(group_path)
-        
-        # Guardar gráficos individuales (U-Matrix y Hit Map) en carpeta de grupo
-        # Necesitamos guardar temporalmente en la ubicación esperada y luego mover
-        plot_u_matrix(u_matrix, params['map_rows'], params['map_cols'], exp_name)
-        plot_hit_map(count_map, params['map_rows'], params['map_cols'], exp_name)
-        
-        # Mover archivos generados a la carpeta del grupo
-        u_matrix_file = f"./results/u_matrix_{exp_name}.png"
-        hit_map_file = f"./results/hit_map_{exp_name}.png"
-        if os.path.exists(u_matrix_file):
-            os.rename(u_matrix_file, f"{group_path}/u_matrix_{exp_name}.png")
-        if os.path.exists(hit_map_file):
-            os.rename(hit_map_file, f"{group_path}/hit_map_{exp_name}.png")
-        
-        # Guardar detalles del experimento
-        experiment_details.append({
-            'exp_num': exp_num,
-            'exp_name': exp_name,
-            'exp_custom_name': exp_custom_name,
-            'params': params,
-            'net': net,
-            'u_matrix': u_matrix,
-            'hit_map': count_map,
-            'qe': qe,
-            'te': te,
-            'qe_history': qe_history,
-            'te_history': te_history,
-            'duration': duration
-        })
-        
-        all_results.append({
-            'Experiment': exp_name,
-            'Custom_Name': exp_custom_name,
-            'Rows': params['map_rows'],
-            'Cols': params['map_cols'],
-            'MapSize': params['map_rows'] * params['map_cols'],
-            'Epochs': params['epochs'],
-            'Initial_eta': params['initial_eta'],
-            'Initial_radius': params['initial_radius'],
-            'Eta_adaptive': params.get('eta_adaptive', True),
-            'Radius_adaptive': params.get('radius_adaptive', True),
-            'Init_method': params.get('init_method', 'sample'),
-            'QE': round(qe, 4),
-            'TE': round(te, 4),
-            'Execution_s': duration
-        })
+        for run_num in range(1, num_runs + 1):
+            if is_group1 and num_runs > 1:
+                print(f"  🔄 Corrida {run_num}/{num_runs}...", end=' ')
+            
+            start_time = time.time()
+            
+            # Inicializar y entrenar red
+            net = KohonenNet(params['map_rows'], params['map_cols'], INPUT_DIM)
+            if track_epochs:
+                final_weights, qe_history, te_history = fit_with_tracking(
+                    net, X_scaled, params['epochs'], params['initial_eta'], 
+                    params['initial_radius'], params.get('init_method', 'sample'),
+                    params.get('eta_adaptive', True), params.get('radius_adaptive', True),
+                    track_per_epoch=True
+                )
+            else:
+                final_weights = net.fit(
+                    X=X_scaled,
+                    epochs=params['epochs'],
+                    initial_eta=params['initial_eta'],
+                    initial_radius=params['initial_radius'],
+                    init_method=params.get('init_method', 'sample'),
+                    eta_adaptive=params.get('eta_adaptive', True),
+                    radius_adaptive=params.get('radius_adaptive', True)
+                )
+                qe_history = []
+                te_history = []
+            
+            # Calcular métricas finales
+            count_map = net.calculate_hit_map(X_scaled)
+            u_matrix = net.calculate_u_matrix()
+            qe = net.calculate_quantization_error(X_scaled)
+            te = net.calculate_topographic_error(X_scaled)
+            
+            duration = round(time.time() - start_time, 2)
+            
+            # Guardar resultados de esta corrida
+            run_result = {
+                'exp_num': exp_num,
+                'exp_name': exp_name,
+                'exp_custom_name': exp_custom_name,
+                'run_num': run_num if is_group1 else None,
+                'qe': qe,
+                'te': te,
+                'duration': duration
+            }
+            
+            if is_group1:
+                group1_runs.append(run_result)
+                if run_num % 5 == 0 or run_num == num_runs:
+                    print(f"QE={qe:.4f}, TE={te:.4f}")
+            else:
+                print(f"  ✓ QE={qe:.4f}, TE={te:.4f}, tiempo={duration}s")
+            
+            # Agregar a resultados generales (todas las corridas)
+            all_results.append({
+                'Experiment': exp_name,
+                'Custom_Name': exp_custom_name,
+                'Run': run_num if is_group1 else 1,
+                'Rows': params['map_rows'],
+                'Cols': params['map_cols'],
+                'MapSize': params['map_rows'] * params['map_cols'],
+                'Epochs': params['epochs'],
+                'Initial_eta': params['initial_eta'],
+                'Initial_radius': params['initial_radius'],
+                'Eta_adaptive': params.get('eta_adaptive', True),
+                'Radius_adaptive': params.get('radius_adaptive', True),
+                'Init_method': params.get('init_method', 'sample'),
+                'QE': round(qe, 4),
+                'TE': round(te, 4),
+                'Execution_s': duration
+            })
+            
+            # Guardar gráficos individuales solo en la primera corrida (o única corrida)
+            if run_num == 1 or not is_group1:
+                # Crear carpeta de grupo si no existe
+                group_folder = get_group_folder(exp_num)
+                group_path = f"./results/{group_folder}"
+                if not os.path.exists(group_path):
+                    os.makedirs(group_path)
+                
+                # Guardar gráficos individuales (U-Matrix y Hit Map) en carpeta de grupo
+                plot_u_matrix(u_matrix, params['map_rows'], params['map_cols'], exp_name)
+                plot_hit_map(count_map, params['map_rows'], params['map_cols'], exp_name)
+                
+                # Mover archivos generados a la carpeta del grupo
+                u_matrix_file = f"./results/u_matrix_{exp_name}.png"
+                hit_map_file = f"./results/hit_map_{exp_name}.png"
+                if os.path.exists(u_matrix_file):
+                    os.rename(u_matrix_file, f"{group_path}/u_matrix_{exp_name}.png")
+                if os.path.exists(hit_map_file):
+                    os.rename(hit_map_file, f"{group_path}/hit_map_{exp_name}.png")
+                
+                # Guardar detalles del experimento (solo primera corrida)
+                experiment_details.append({
+                    'exp_num': exp_num,
+                    'exp_name': exp_name,
+                    'exp_custom_name': exp_custom_name,
+                    'params': params,
+                    'net': net,
+                    'u_matrix': u_matrix,
+                    'hit_map': count_map,
+                    'qe': qe,
+                    'te': te,
+                    'qe_history': qe_history,
+                    'te_history': te_history,
+                    'duration': duration
+                })
     
     # Guardar CSV con resultados
     results_df = pd.DataFrame(all_results)
@@ -193,7 +221,7 @@ def run_experiments_with_group_plots(filepath, exper1iments):
     # --- GRUPO 1: Inicialización (Experimentos 1-2) ---
     init_exps = [exp for exp in experiment_details if exp['exp_num'] in [1, 2]]
     if len(init_exps) == 2:
-        plot_init_comparison(init_exps, results_df)
+        plot_init_comparison(init_exps, results_df, group1_runs)
     
     # --- GRUPO 2: Adaptación del Radio (Experimentos 3-5) ---
     radius_exps = [exp for exp in experiment_details if exp['exp_num'] in [3, 4, 5]]
@@ -215,8 +243,8 @@ def run_experiments_with_group_plots(filepath, exper1iments):
     return results_df
 
 
-def plot_init_comparison(experiments, results_df):
-    """Gráficos para comparación de inicialización (Random vs Sample)"""
+def plot_init_comparison(experiments, results_df, group1_runs=None):
+    """Gráficos para comparación de inicialización (Random vs Sample) con múltiples corridas"""
     print("\n📊 Generando gráficos de comparación de inicialización...")
     
     # Crear carpeta del grupo
@@ -229,20 +257,109 @@ def plot_init_comparison(experiments, results_df):
         results_df['Experiment'].str.extract(r'exp_(\d+)_')[0].astype(int).isin([1, 2])
     ]
     
-    # QE Barplot
+    # Si hay múltiples corridas, crear DataFrame con todas las corridas
+    if group1_runs and len(group1_runs) > 0:
+        runs_df = pd.DataFrame(group1_runs)
+        
+        # === GRÁFICOS CON DISTRIBUCIÓN DE 20 CORRIDAS ===
+        
+        # Boxplot QE
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(data=runs_df, x='exp_custom_name', y='qe', hue='exp_custom_name', 
+                   palette='Blues_r', legend=False)
+        sns.stripplot(data=runs_df, x='exp_custom_name', y='qe', color='black', alpha=0.3, size=3)
+        plt.title('Distribución de QE - 20 Corridas\nInicialización: Random vs Sample')
+        plt.xlabel('Método de Inicialización')
+        plt.ylabel('Quantization Error (QE)')
+        plt.tight_layout()
+        plt.savefig(f'{group_folder}/QE_boxplot_20runs.png', bbox_inches='tight', dpi=150)
+        plt.close()
+        
+        # Boxplot TE
+        plt.figure(figsize=(10, 6))
+        sns.boxplot(data=runs_df, x='exp_custom_name', y='te', hue='exp_custom_name', 
+                   palette='Reds_r', legend=False)
+        sns.stripplot(data=runs_df, x='exp_custom_name', y='te', color='black', alpha=0.3, size=3)
+        plt.title('Distribución de TE - 20 Corridas\nInicialización: Random vs Sample')
+        plt.xlabel('Método de Inicialización')
+        plt.ylabel('Topographic Error (TE)')
+        plt.tight_layout()
+        plt.savefig(f'{group_folder}/TE_boxplot_20runs.png', bbox_inches='tight', dpi=150)
+        plt.close()
+        
+        # Violin plot combinado
+        fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+        sns.violinplot(data=runs_df, x='exp_custom_name', y='qe', hue='exp_custom_name', 
+                      palette='Blues_r', legend=False, ax=axes[0])
+        axes[0].set_title('Distribución de QE - 20 Corridas')
+        axes[0].set_xlabel('Método de Inicialización')
+        axes[0].set_ylabel('Quantization Error (QE)')
+        
+        sns.violinplot(data=runs_df, x='exp_custom_name', y='te', hue='exp_custom_name', 
+                      palette='Reds_r', legend=False, ax=axes[1])
+        axes[1].set_title('Distribución de TE - 20 Corridas')
+        axes[1].set_xlabel('Método de Inicialización')
+        axes[1].set_ylabel('Topographic Error (TE)')
+        
+        plt.tight_layout()
+        plt.savefig(f'{group_folder}/QE_TE_violin_20runs.png', bbox_inches='tight', dpi=150)
+        plt.close()
+        
+        # Estadísticas resumidas
+        stats_df = runs_df.groupby('exp_custom_name').agg({
+            'qe': ['mean', 'std', 'min', 'max'],
+            'te': ['mean', 'std', 'min', 'max']
+        }).round(4)
+        stats_df.to_csv(f'{group_folder}/estadisticas_20runs.csv')
+        print(f"  📊 Estadísticas de 20 corridas guardadas en estadisticas_20runs.csv")
+    
+    # QE Barplot (promedio si hay múltiples corridas)
     plt.figure(figsize=(8, 6))
-    sns.barplot(data=init_df, x='Custom_Name', y='QE', palette='Blues_r')
-    plt.title('Quantization Error (QE) - Inicialización: Random vs Sample\n↓ menor es mejor')
+    if group1_runs and len(group1_runs) > 0:
+        # Usar promedio de las corridas
+        avg_df = runs_df.groupby('exp_custom_name')[['qe', 'te']].mean().reset_index()
+        avg_df.columns = ['Custom_Name', 'QE', 'TE']
+        std_df = runs_df.groupby('exp_custom_name')[['qe', 'te']].std().reset_index()
+        std_df.columns = ['Custom_Name', 'QE_std', 'TE_std']
+        
+        # Combinar para tener todo en un solo DataFrame
+        plot_df = avg_df.merge(std_df, on='Custom_Name')
+        
+        # Crear barplot manualmente con errorbars
+        ax = plt.gca()
+        x_pos = range(len(plot_df))
+        bars = ax.bar(x_pos, plot_df['QE'], yerr=plot_df['QE_std'], 
+                     color=sns.color_palette('Blues_r', len(plot_df)), 
+                     capsize=5, alpha=0.8)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(plot_df['Custom_Name'])
+        plt.title('QE Promedio - 20 Corridas (con desviación estándar)\n↓ menor es mejor')
+    else:
+        sns.barplot(data=init_df, x='Custom_Name', y='QE', hue='Custom_Name', 
+                   palette='Blues_r', legend=False)
+        plt.title('Quantization Error (QE) - Inicialización: Random vs Sample\n↓ menor es mejor')
     plt.xlabel('Método de Inicialización')
     plt.ylabel('Quantization Error (QE)')
     plt.tight_layout()
     plt.savefig(f'{group_folder}/QE_comparison.png', bbox_inches='tight', dpi=150)
     plt.close()
     
-    # TE Barplot
+    # TE Barplot (promedio si hay múltiples corridas)
     plt.figure(figsize=(8, 6))
-    sns.barplot(data=init_df, x='Custom_Name', y='TE', palette='Reds_r')
-    plt.title('Topographic Error (TE) - Inicialización: Random vs Sample\n↓ menor es mejor')
+    if group1_runs and len(group1_runs) > 0:
+        # Crear barplot manualmente con errorbars
+        ax = plt.gca()
+        x_pos = range(len(plot_df))
+        bars = ax.bar(x_pos, plot_df['TE'], yerr=plot_df['TE_std'], 
+                     color=sns.color_palette('Reds_r', len(plot_df)), 
+                     capsize=5, alpha=0.8)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(plot_df['Custom_Name'])
+        plt.title('TE Promedio - 20 Corridas (con desviación estándar)\n↓ menor es mejor')
+    else:
+        sns.barplot(data=init_df, x='Custom_Name', y='TE', hue='Custom_Name', 
+                   palette='Reds_r', legend=False)
+        plt.title('Topographic Error (TE) - Inicialización: Random vs Sample\n↓ menor es mejor')
     plt.xlabel('Método de Inicialización')
     plt.ylabel('Topographic Error (TE)')
     plt.tight_layout()
@@ -552,7 +669,11 @@ def plot_size_comparison(experiments, results_df):
                         text = axes[idx].text(j, i, int(hit_map[i, j]),
                                              ha="center", va="center", color="black", fontsize=8)
                 
-                plt.colorbar(im, ax=axes[idx], label='Número de activaciones')
+                # Colorbar con solo enteros
+                from matplotlib.ticker import MaxNLocator
+                cbar = plt.colorbar(im, ax=axes[idx], label='Número de activaciones')
+                cbar.locator = MaxNLocator(integer=True)
+                cbar.update_ticks()
         
         # Ocultar subplots no usados
         for idx in range(n_sizes, 4):
