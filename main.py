@@ -35,6 +35,8 @@ def execute_kohonen_analysis(
         'epochs': epochs,
         'initial_eta': initial_eta,
         'initial_radius': initial_radius,
+        'eta_adaptive':True,
+        'radius_adaptive':True,
         'init_method': init_method,
         'output_name': output_name
     }

@@ -58,23 +58,52 @@ class KohonenNet:
 
         return bmu_index
 
-
-    def _calculate_learning_params(self, t, T, initial_eta, initial_radius):
+    def _calculate_learning_params(self, t, T, initial_eta, initial_radius, eta_adaptive=True, radius_adaptive=True):
         """
-        Calculates the decaying neighborhood radius and learning rate.
+        Calcula el radio de vecindario y la tasa de aprendizaje.
+
+        Permite desactivar el decaimiento exponencial para fines de prueba.
 
         :param t: Current iteration (time step).
         :param T: Total number of update steps.
         :param initial_eta: Initial learning rate (eta_0).
         :param initial_radius: Initial neighborhood radius (R_0).
-        :param sigma_0: Time constant for exponential decay.
+        :param eta_adaptive: Si es True, eta decae exponencialmente. Si es False, es constante = initial_eta.
+        :param radius_adaptive: Si es True, R decae exponencialmente con piso de 1.0. Si es False, es constante = initial_radius.
         :return: current_radius, current_learning_rate
         """
-        sigma_0 = T / np.log(initial_radius)
-        radius = initial_radius * np.exp(-t / sigma_0)
 
-        learning_rate = initial_eta * np.exp(-t / sigma_0)
+        # 1. Inicialización con los valores por defecto (si no son adaptativos)
+        radius = initial_radius
+        learning_rate = initial_eta
 
+        # 2. Solo calculamos el factor de decaimiento si AL MENOS uno es adaptativo
+        if radius_adaptive or eta_adaptive:
+            # Cálculo de sigma_0 para el decaimiento
+            if initial_radius > 1.0:
+                sigma_0 = T / np.log(initial_radius)
+            else:
+                sigma_0 = T
+
+                # Cálculo del factor de decaimiento (común para R y eta)
+            decaying_factor = np.exp(-t / sigma_0)
+
+            # 3. Cálculo del radio (R) si es adaptativo
+            if radius_adaptive:
+                if initial_radius > 1.0:
+                    calculated_radius = initial_radius * decaying_factor
+                    # Restricción: el radio debe ser como mínimo 1.0
+                    radius = max(1.0, calculated_radius)
+                else:
+                    # Si R0 ya era <= 1.0, se mantiene en 1.0
+                    radius = 1.0
+
+            # 4. Cálculo de la tasa de aprendizaje (eta) si es adaptativo
+            if eta_adaptive:
+                # La tasa de aprendizaje debe decaer a cero para garantizar la convergencia.
+                learning_rate = initial_eta * decaying_factor
+
+        # 5. Si ambos son False (no adaptativos), se devuelven initial_radius e initial_eta
         return radius, learning_rate
 
 
@@ -98,10 +127,12 @@ class KohonenNet:
         return h_t
 
 
-    def fit(self, X, epochs, initial_eta, initial_radius, init_method='random'):
+    def fit(self, X, epochs, initial_eta, initial_radius, init_method='random', eta_adaptive=True, radius_adaptive=True):
         """
         Trains the Kohonen Network with the dataset X.
 
+        :param radius_adaptive:
+        :param eta_adaptive:
         :param X: NumPy array of input data (standardized features).
         :param epochs: Number of passes over the entire dataset.
         :param initial_eta: Initial learning rate (eta_0).
@@ -122,7 +153,7 @@ class KohonenNet:
             for x_p in X[np.random.permutation(N_samples)]:
                 # Calculate (R(t) y eta(t))
                 radius, learning_rate = self._calculate_learning_params(
-                    t, T, initial_eta, initial_radius
+                    t, T, initial_eta, initial_radius, eta_adaptive, radius_adaptive
                 )
 
                 bmu_idx = self._find_bmu(x_p)

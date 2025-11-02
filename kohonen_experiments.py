@@ -29,7 +29,9 @@ def run_kohonen_experiments(filepath: str, experiments_data: list):
                 'map_cols': params['map_cols'],
                 'epochs': params['epochs'],
                 'initial_eta': params['initial_eta'],
-                'initial_radius': params.get('initial_radius', 4.0),  # Usar .get para radio/init
+                'initial_radius': params.get('initial_radius', 4.0),
+                'eta_adaptive': params.get('eta_adaptive', True),
+                'radius_adaptive': params.get('radius_adaptive', True),
                 'init_method': params.get('init_method', 'sample'),
                 'output_name': experiment_name
             }
@@ -55,6 +57,8 @@ def run_kohonen_experiments(filepath: str, experiments_data: list):
             'epochs': params['epochs'],
             'initial_eta': params['initial_eta'],
             'initial_radius': params.get('initial_radius', 4.0),
+            'eta_adaptive': params.get('eta_adaptive', True),
+            'radius_adaptive': params.get('radius_adaptive', True),
             'init_method': params.get('init_method', 'sample'),
             'Execution_Time_s': round(end_time - start_time, 2)
 

@@ -6,7 +6,7 @@ from graphs.kohonen_graphs import plot_u_matrix, plot_hit_map, plot_component_pl
 from parser.parser import load_and_preprocess_data
 
 
-def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, initial_radius, init_method='sample', output_name='kohonen_results'):
+def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, initial_radius, eta_adaptive=True, radius_adaptive=True, init_method='sample', output_name='kohonen_results'):
     """
     Performs the complete analysis for Exercise 1.1 of the Kohonen Network:
     Loads data, trains the network, calculates metrics (U-Matrix, Hit Map), and generates plots.
@@ -17,6 +17,8 @@ def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, init
     :param epochs: Number of training passes.
     :param initial_eta: Initial learning rate.
     :param initial_radius: Initial neighborhood radius.
+    :param radius_adaptive: Value that indicates if the radius varies overtime.
+    :param eta_adaptive: Value that indicates if the eta varies overtime.
     :param init_method: Weight initialization method ('random' [0,1] or 'sample').
     """
     print(f"\n--- Iniciando Análisis de Kohonen para {filepath} ({map_rows}x{map_cols}) ---")
@@ -27,7 +29,7 @@ def run_kohonen_analysis(filepath, map_rows, map_cols, epochs, initial_eta, init
     print(f"Datos cargados. Features (N)={INPUT_DIM}. Países={len(countries)}.")
 
     net = KohonenNet(map_rows, map_cols, INPUT_DIM)
-    final_weights = net.fit(X_scaled, epochs, initial_eta, initial_radius, init_method)
+    final_weights = net.fit(X_scaled, epochs, initial_eta, initial_radius, init_method, eta_adaptive, radius_adaptive)
 
     print("\n--- Calculando Métricas de Análisis ---")
     count_map = net.calculate_hit_map(X_scaled)
