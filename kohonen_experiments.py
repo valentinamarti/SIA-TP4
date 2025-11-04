@@ -101,7 +101,6 @@ def save_country_mapping_markdown(mapping_df, output_path, exp_name, exp_custom_
         f.write(md_content)
 
 
-def run_experiments_with_group_plots(filepath, exper1iments):
 def run_experiments_with_group_plots(filepath, experiments):
     """
     Ejecuta experimentos y genera gráficos específicos por grupo.
