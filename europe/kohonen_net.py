@@ -277,6 +277,8 @@ class KohonenNet:
         """
         Calculates the Topographic Error (TE).
         TE = fraction of samples whose first and second BMUs are not adjacent on the grid.
+        
+        Implementation uses stable sorting to handle ties consistently.
         """
         if self.weights is None:
             raise RuntimeError("Train the network before computing Topographic Error.")
@@ -287,11 +289,16 @@ class KohonenNet:
         for x_p in X:
             # Compute distances to all neurons
             distances = np.linalg.norm(self.weights - x_p, axis=1)
-            bmu_indices = np.argsort(distances)[:2]  # Best and 2nd best
+            
+            # Use stable sort (mergesort) to ensure consistent ordering when distances are equal
+            # This prevents TE from varying due to tie-breaking in unstable sorts
+            bmu_indices = np.argsort(distances, kind='mergesort')[:2]  # Best and 2nd best
+            
             bmu1 = self.neuron_coords[bmu_indices[0]]
             bmu2 = self.neuron_coords[bmu_indices[1]]
 
-            # Manhattan distance between both BMUs
+            # Manhattan distance between both BMUs on the grid
+            # If distance > 1, they are not adjacent (not neighbors)
             grid_distance = np.abs(bmu1[0] - bmu2[0]) + np.abs(bmu1[1] - bmu2[1])
 
             if grid_distance > 1:

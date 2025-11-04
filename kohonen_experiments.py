@@ -63,7 +63,7 @@ def fit_with_tracking(net, X, epochs, initial_eta, initial_radius, init_method='
     return net.weights, qe_history, te_history
 
 
-def run_experiments_with_group_plots(filepath, exper1iments):
+def run_experiments_with_group_plots(filepath, experiments):
     """
     Ejecuta experimentos y genera gráficos específicos por grupo.
     """
@@ -333,11 +333,11 @@ def plot_init_comparison(experiments, results_df, group1_runs=None):
                      capsize=5, alpha=0.8)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(plot_df['Custom_Name'])
-        plt.title('QE Promedio - 20 Corridas (con desviación estándar)\n↓ menor es mejor')
+        plt.title('QE Promedio - 20 Corridas (con desviación estándar)\n')
     else:
         sns.barplot(data=init_df, x='Custom_Name', y='QE', hue='Custom_Name', 
                    palette='Blues_r', legend=False)
-        plt.title('Quantization Error (QE) - Inicialización: Random vs Sample\n↓ menor es mejor')
+        plt.title('Quantization Error (QE) - Inicialización: Random vs Sample\n')
     plt.xlabel('Método de Inicialización')
     plt.ylabel('Quantization Error (QE)')
     plt.tight_layout()
@@ -355,11 +355,11 @@ def plot_init_comparison(experiments, results_df, group1_runs=None):
                      capsize=5, alpha=0.8)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(plot_df['Custom_Name'])
-        plt.title('TE Promedio - 20 Corridas (con desviación estándar)\n↓ menor es mejor')
+        plt.title('TE Promedio - 20 Corridas (con desviación estándar)\n')
     else:
         sns.barplot(data=init_df, x='Custom_Name', y='TE', hue='Custom_Name', 
                    palette='Reds_r', legend=False)
-        plt.title('Topographic Error (TE) - Inicialización: Random vs Sample\n↓ menor es mejor')
+        plt.title('Topographic Error (TE) - Inicialización: Random vs Sample\n')
     plt.xlabel('Método de Inicialización')
     plt.ylabel('Topographic Error (TE)')
     plt.tight_layout()
@@ -419,7 +419,7 @@ def plot_radius_comparison(experiments, results_df):
     # QE Barplot
     plt.figure(figsize=(10, 6))
     sns.barplot(data=radius_df, x='Custom_Name', y='QE', palette='Blues_r')
-    plt.title('Quantization Error (QE) - Adaptación de Radio\n↓ menor es mejor')
+    plt.title('Quantization Error (QE) - Adaptación de Radio\n')
     plt.xlabel('Configuración de Radio')
     plt.ylabel('Quantization Error (QE)')
     plt.xticks(rotation=15, ha='right')
@@ -430,7 +430,7 @@ def plot_radius_comparison(experiments, results_df):
     # TE Barplot
     plt.figure(figsize=(10, 6))
     sns.barplot(data=radius_df, x='Custom_Name', y='TE', palette='Reds_r')
-    plt.title('Topographic Error (TE) - Adaptación de Radio\n↓ menor es mejor')
+    plt.title('Topographic Error (TE) - Adaptación de Radio\n')
     plt.xlabel('Configuración de Radio')
     plt.ylabel('Topographic Error (TE)')
     plt.xticks(rotation=15, ha='right')
@@ -547,13 +547,13 @@ def plot_eta_comparison(experiments, results_df):
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     
     sns.barplot(data=eta_df, x='Custom_Name', y='QE', palette='Blues_r', ax=axes[0])
-    axes[0].set_title('QE Final - Adaptación de η\n↓ menor es mejor')
+    axes[0].set_title('QE Final - Adaptación de η\n')
     axes[0].set_xlabel('Configuración de η')
     axes[0].set_ylabel('Quantization Error (QE)')
     axes[0].tick_params(axis='x', rotation=15)
     
     sns.barplot(data=eta_df, x='Custom_Name', y='TE', palette='Reds_r', ax=axes[1])
-    axes[1].set_title('TE Final - Adaptación de η\n↓ menor es mejor')
+    axes[1].set_title('TE Final - Adaptación de η\n')
     axes[1].set_xlabel('Configuración de η')
     axes[1].set_ylabel('Topographic Error (TE)')
     axes[1].tick_params(axis='x', rotation=15)
@@ -686,6 +686,361 @@ def plot_size_comparison(experiments, results_df):
     print(f"  ✓ Grupo 4: Gráficos guardados en {group_folder}/")
 
 
+def run_optimal_epochs_experiment(filepath, max_epochs=300):
+    """
+    Ejecuta un experimento para evaluar la cantidad óptima de épocas para diferentes configuraciones.
+    
+    :param filepath: Ruta al archivo CSV con los datos
+    :param max_epochs: Número máximo de épocas a ejecutar para evaluar convergencia
+    """
+    print(f"\n🔬 Ejecutando experimento de épocas óptimas (máx {max_epochs} épocas)...\n")
+    
+    # Crear carpeta de resultados
+    results_folder = './results/grupo5_epocas_optimas'
+    if not os.path.exists(results_folder):
+        os.makedirs(results_folder)
+    
+    # Cargar datos
+    X_scaled, countries, feature_names = load_and_preprocess_data(filepath)
+    INPUT_DIM = X_scaled.shape[1]
+    print(f"Datos cargados. Países={len(countries)}, Features={INPUT_DIM}\n")
+    
+    # Definir las 4 configuraciones a evaluar
+    configs = [
+        {
+            'name': 'Clásica',
+            'map_rows': 4, 'map_cols': 4,
+            'initial_eta': 0.5, 'initial_radius': 4.0,
+            'eta_adaptive': True, 'radius_adaptive': True,
+            'init_method': 'sample'
+        },
+        {
+            'name': 'Fijo grande',
+            'map_rows': 4, 'map_cols': 4,
+            'initial_eta': 0.5, 'initial_radius': 4.0,
+            'eta_adaptive': True, 'radius_adaptive': False,
+            'init_method': 'sample'
+        },
+        {
+            'name': 'Exploración rápida',
+            'map_rows': 4, 'map_cols': 4,
+            'initial_eta': 0.9, 'initial_radius': 4.0,
+            'eta_adaptive': True, 'radius_adaptive': True,
+            'init_method': 'sample'
+        },
+        {
+            'name': 'Granular',
+            'map_rows': 6, 'map_cols': 6,
+            'initial_eta': 0.5, 'initial_radius': 4.0,
+            'eta_adaptive': True, 'radius_adaptive': False,
+            'init_method': 'sample'
+        }
+    ]
+    
+    all_results = []
+    
+    # Ejecutar cada configuración
+    for config in configs:
+        print(f"📊 Ejecutando: {config['name']}...")
+        start_time = time.time()
+        
+        # Inicializar red
+        net = KohonenNet(config['map_rows'], config['map_cols'], INPUT_DIM)
+        
+        # Entrenar con tracking de QE y TE por época
+        final_weights, qe_history, te_history = fit_with_tracking(
+            net, X_scaled, max_epochs,
+            config['initial_eta'], config['initial_radius'],
+            config['init_method'],
+            config['eta_adaptive'], config['radius_adaptive'],
+            track_per_epoch=True
+        )
+        
+        duration = round(time.time() - start_time, 2)
+        
+        # Guardar resultados
+        config_result = {
+            'name': config['name'],
+            'qe_history': qe_history,
+            'te_history': te_history,
+            'final_qe': qe_history[-1] if qe_history else None,
+            'final_te': te_history[-1] if te_history else None,
+            'duration': duration,
+            'config': config
+        }
+        all_results.append(config_result)
+        
+        print(f"  ✓ Finalizado en {duration}s - QE final: {config_result['final_qe']:.4f}, TE final: {config_result['final_te']:.4f}\n")
+    
+    # Generar gráficos
+    print("📈 Generando gráficos de convergencia...")
+    plot_convergence_analysis(all_results, results_folder, max_epochs)
+    
+    # Guardar resultados en CSV
+    save_convergence_results(all_results, results_folder)
+    
+    print(f"\n✅ Experimentos completados. Resultados guardados en {results_folder}/")
+    
+    return all_results
+
+
+def plot_convergence_analysis(results, output_folder, max_epochs):
+    """
+    Genera gráficos de convergencia de QE y TE para todas las configuraciones.
+    """
+    # Configurar estilo
+    sns.set(style="whitegrid", context="talk")
+    plt.rcParams['figure.dpi'] = 100
+    
+    # Colores para cada configuración
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+    
+    # 1. Gráfico combinado: QE y TE en subplots
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    
+    for idx, result in enumerate(results):
+        epochs_range = range(1, len(result['qe_history']) + 1)
+        
+        # QE
+        axes[0].plot(epochs_range, result['qe_history'], 
+                    label=result['name'], linewidth=2.5, 
+                    color=colors[idx], marker='o', markersize=4, markevery=max(1, max_epochs//30))
+        
+        # TE
+        axes[1].plot(epochs_range, result['te_history'], 
+                    label=result['name'], linewidth=2.5, 
+                    color=colors[idx], marker='s', markersize=4, markevery=max(1, max_epochs//30))
+    
+    # Configurar QE subplot
+    axes[0].set_xlabel('Época', fontsize=12)
+    axes[0].set_ylabel('Quantization Error (QE)', fontsize=12)
+    axes[0].set_title('Convergencia de QE por Configuración\n', fontsize=14, fontweight='bold')
+    axes[0].legend(loc='best', fontsize=10)
+    axes[0].grid(True, alpha=0.3)
+    
+    # Configurar TE subplot
+    axes[1].set_xlabel('Época', fontsize=12)
+    axes[1].set_ylabel('Topographic Error (TE)', fontsize=12)
+    axes[1].set_title('Convergencia de TE por Configuración\n', fontsize=14, fontweight='bold')
+    axes[1].legend(loc='best', fontsize=10)
+    axes[1].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(f'{output_folder}/convergencia_qe_te.png', bbox_inches='tight', dpi=150)
+    plt.close()
+    
+    # 2. Gráfico QE individual (más grande para ver detalles)
+    plt.figure(figsize=(14, 8))
+    for idx, result in enumerate(results):
+        epochs_range = range(1, len(result['qe_history']) + 1)
+        plt.plot(epochs_range, result['qe_history'], 
+                label=result['name'], linewidth=2.5, 
+                color=colors[idx], marker='o', markersize=5, markevery=max(1, max_epochs//25))
+    
+    plt.xlabel('Época', fontsize=13)
+    plt.ylabel('Quantization Error (QE)', fontsize=13)
+    plt.title('Convergencia de Quantization Error (QE)\nEvaluación de Épocas Óptimas', 
+              fontsize=15, fontweight='bold')
+    plt.legend(fontsize=11, loc='best')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(f'{output_folder}/convergencia_qe.png', bbox_inches='tight', dpi=150)
+    plt.close()
+    
+    # 3. Gráfico TE individual (más grande para ver detalles)
+    plt.figure(figsize=(14, 8))
+    for idx, result in enumerate(results):
+        epochs_range = range(1, len(result['te_history']) + 1)
+        plt.plot(epochs_range, result['te_history'], 
+                label=result['name'], linewidth=2.5, 
+                color=colors[idx], marker='s', markersize=5, markevery=max(1, max_epochs//25))
+    
+    plt.xlabel('Época', fontsize=13)
+    plt.ylabel('Topographic Error (TE)', fontsize=13)
+    plt.title('Convergencia de Topographic Error (TE)\nEvaluación de Épocas Óptimas', 
+              fontsize=15, fontweight='bold')
+    plt.legend(fontsize=11, loc='best')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(f'{output_folder}/convergencia_te.png', bbox_inches='tight', dpi=150)
+    plt.close()
+    
+    # 4. Gráfico de tasa de cambio (derivada) combinado para identificar convergencia
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    
+    for idx, result in enumerate(results):
+        epochs_range = range(1, len(result['qe_history']) + 1)
+        
+        # Calcular cambio entre épocas consecutivas
+        qe_changes = np.diff(result['qe_history'])
+        te_changes = np.diff(result['te_history'])
+        
+        # Ejes para los cambios (una época menos)
+        change_epochs = range(2, len(result['qe_history']) + 1)
+        
+        axes[0].plot(change_epochs, np.abs(qe_changes), 
+                    label=result['name'], linewidth=2, 
+                    color=colors[idx], alpha=0.7)
+        axes[1].plot(change_epochs, np.abs(te_changes), 
+                    label=result['name'], linewidth=2, 
+                    color=colors[idx], alpha=0.7)
+    
+    axes[0].set_xlabel('Época', fontsize=12)
+    axes[0].set_ylabel('|Δ QE| (Cambio absoluto)', fontsize=12)
+    axes[0].set_title('Tasa de Cambio de QE\n',
+                      fontsize=14, fontweight='bold')
+    axes[0].legend(fontsize=10)
+    axes[0].grid(True, alpha=0.3)
+    axes[0].set_yscale('log')  # Escala logarítmica para mejor visualización
+    
+    axes[1].set_xlabel('Época', fontsize=12)
+    axes[1].set_ylabel('|Δ TE| (Cambio absoluto)', fontsize=12)
+    axes[1].set_title('Tasa de Cambio de TE\n',
+                      fontsize=14, fontweight='bold')
+    axes[1].legend(fontsize=10)
+    axes[1].grid(True, alpha=0.3)
+    axes[1].set_yscale('log')  # Escala logarítmica para mejor visualización
+    
+    plt.tight_layout()
+    plt.savefig(f'{output_folder}/tasa_cambio_convergencia.png', bbox_inches='tight', dpi=150)
+    plt.close()
+    
+    # 4b. Gráficos individuales de tasa de cambio para cada configuración
+    for idx, result in enumerate(results):
+        # Calcular cambio entre épocas consecutivas
+        qe_changes = np.diff(result['qe_history'])
+        te_changes = np.diff(result['te_history'])
+        
+        # Ejes para los cambios (una época menos)
+        change_epochs = range(2, len(result['qe_history']) + 1)
+        
+        # Crear figura con dos subplots
+        fig, axes = plt.subplots(2, 1, figsize=(12, 10))
+        
+        # QE changes
+        axes[0].plot(change_epochs, np.abs(qe_changes), 
+                    linewidth=2.5, color=colors[idx], alpha=0.8)
+        axes[0].fill_between(change_epochs, np.abs(qe_changes), 
+                            alpha=0.3, color=colors[idx])
+        axes[0].set_xlabel('Época', fontsize=12)
+        axes[0].set_ylabel('|Δ QE| (Cambio absoluto)', fontsize=12)
+        axes[0].set_title(f'Tasa de Cambio de QE - {result["name"]}\n',
+                          fontsize=14, fontweight='bold')
+        axes[0].grid(True, alpha=0.3)
+        axes[0].set_yscale('log')
+        
+        # TE changes
+        axes[1].plot(change_epochs, np.abs(te_changes), 
+                    linewidth=2.5, color=colors[idx], alpha=0.8)
+        axes[1].fill_between(change_epochs, np.abs(te_changes), 
+                            alpha=0.3, color=colors[idx])
+        axes[1].set_xlabel('Época', fontsize=12)
+        axes[1].set_ylabel('|Δ TE| (Cambio absoluto)', fontsize=12)
+        axes[1].set_title(f'Tasa de Cambio de TE - {result["name"]}\n',
+                          fontsize=14, fontweight='bold')
+        axes[1].grid(True, alpha=0.3)
+        axes[1].set_yscale('log')
+        
+        plt.tight_layout()
+        
+        # Nombre de archivo seguro
+        safe_name = result['name'].replace(' ', '_').replace('ó', 'o').replace('í', 'i')
+        plt.savefig(f'{output_folder}/tasa_cambio_{safe_name}.png', bbox_inches='tight', dpi=150)
+        plt.close()
+    
+    # 5. Gráfico de valores finales comparativo
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+    
+    names = [r['name'] for r in results]
+    final_qe = [r['final_qe'] for r in results]
+    final_te = [r['final_te'] for r in results]
+    
+    x_pos = np.arange(len(names))
+    
+    bars1 = axes[0].bar(x_pos, final_qe, color=colors, alpha=0.8, edgecolor='black', linewidth=1.5)
+    axes[0].set_xlabel('Configuración', fontsize=12)
+    axes[0].set_ylabel('QE Final', fontsize=12)
+    axes[0].set_title('QE Final por Configuración\n', fontsize=13, fontweight='bold')
+    axes[0].set_xticks(x_pos)
+    axes[0].set_xticklabels(names, rotation=15, ha='right', fontsize=10)
+    axes[0].grid(True, alpha=0.3, axis='y')
+    
+    # Añadir valores en las barras
+    for bar in bars1:
+        height = bar.get_height()
+        axes[0].text(bar.get_x() + bar.get_width()/2., height,
+                    f'{height:.4f}', ha='center', va='bottom', fontsize=9)
+    
+    bars2 = axes[1].bar(x_pos, final_te, color=colors, alpha=0.8, edgecolor='black', linewidth=1.5)
+    axes[1].set_xlabel('Configuración', fontsize=12)
+    axes[1].set_ylabel('TE Final', fontsize=12)
+    axes[1].set_title('TE Final por Configuración\n', fontsize=13, fontweight='bold')
+    axes[1].set_xticks(x_pos)
+    axes[1].set_xticklabels(names, rotation=15, ha='right', fontsize=10)
+    axes[1].grid(True, alpha=0.3, axis='y')
+    
+    # Añadir valores en las barras
+    for bar in bars2:
+        height = bar.get_height()
+        axes[1].text(bar.get_x() + bar.get_width()/2., height,
+                    f'{height:.4f}', ha='center', va='bottom', fontsize=9)
+    
+    plt.tight_layout()
+    plt.savefig(f'{output_folder}/valores_finales_comparacion.png', bbox_inches='tight', dpi=150)
+    plt.close()
+    
+    print(f"  ✓ Gráficos generados en {output_folder}/")
+
+
+def save_convergence_results(results, output_folder):
+    """
+    Guarda los resultados de convergencia en archivos CSV y Excel (si está disponible).
+    """
+    # Crear DataFrame con valores finales
+    summary_data = []
+    for result in results:
+        summary_data.append({
+            'Configuración': result['name'],
+            'Mapa': f"{result['config']['map_rows']}x{result['config']['map_cols']}",
+            'Eta_Inicial': result['config']['initial_eta'],
+            'Radio_Inicial': result['config']['initial_radius'],
+            'Eta_Adaptativo': result['config']['eta_adaptive'],
+            'Radio_Adaptativo': result['config']['radius_adaptive'],
+            'QE_Final': round(result['final_qe'], 6),
+            'TE_Final': round(result['final_te'], 6),
+            'Tiempo_s': result['duration']
+        })
+    
+    summary_df = pd.DataFrame(summary_data)
+    summary_df.to_csv(f'{output_folder}/resumen_convergencia.csv', index=False, encoding='utf-8')
+    
+    # Guardar historiales completos en CSV individuales
+    for result in results:
+        history_df = pd.DataFrame({
+            'Época': range(1, len(result['qe_history']) + 1),
+            'QE': result['qe_history'],
+            'TE': result['te_history']
+        })
+        # Nombre de archivo seguro (sin caracteres especiales)
+        safe_name = result['name'].replace(' ', '_').replace('ó', 'o').replace('í', 'i')
+        history_df.to_csv(f'{output_folder}/historial_{safe_name}.csv', index=False, encoding='utf-8')
+    
+    # Intentar guardar en Excel si openpyxl está disponible
+    try:
+        with pd.ExcelWriter(f'{output_folder}/historiales_completos.xlsx', engine='openpyxl') as writer:
+            for result in results:
+                history_df = pd.DataFrame({
+                    'Época': range(1, len(result['qe_history']) + 1),
+                    'QE': result['qe_history'],
+                    'TE': result['te_history']
+                })
+                sheet_name = result['name'][:31]  # Limitar nombre de hoja a 31 caracteres
+                history_df.to_excel(writer, sheet_name=sheet_name, index=False)
+        print(f"  ✓ Resultados guardados en CSV y Excel")
+    except ImportError:
+        print(f"  ✓ Resultados guardados en CSV (openpyxl no disponible para Excel)")
+
+
 # Definición de experimentos para análisis sistemático de parámetros de Kohonen
 experiments = [
     # --- Inicialización: random vs sample
@@ -747,15 +1102,32 @@ experiments = [
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Uso: python kohonen_experiments.py <ruta_al_archivo_csv>")
+        print("Uso: python kohonen_experiments.py <ruta_al_archivo_csv> [--epocas-optimas] [--max-epocas N]")
+        print("\nOpciones:")
+        print("  --epocas-optimas  : Ejecuta el experimento de evaluación de épocas óptimas")
+        print("  --max-epocas N    : Número máximo de épocas (default: 300)")
         sys.exit(1)
 
     DATA_FILEPATH = sys.argv[1]
+    
+    # Verificar si se solicita el experimento de épocas óptimas
+    if '--epocas-optimas' in sys.argv:
+        max_epochs = 300  # Default
+        if '--max-epocas' in sys.argv:
+            try:
+                max_epochs_idx = sys.argv.index('--max-epocas')
+                max_epochs = int(sys.argv[max_epochs_idx + 1])
+            except (IndexError, ValueError):
+                print("⚠️  Error: --max-epocas requiere un número válido. Usando default: 300")
+        
+        # Ejecutar experimento de épocas óptimas
+        results = run_optimal_epochs_experiment(DATA_FILEPATH, max_epochs=max_epochs)
+    else:
+        # Ejecutar experimentos originales
+        print(f"Total de experimentos a ejecutar: {len(experiments)}")
 
-    print(f"Total de experimentos a ejecutar: {len(experiments)}")
+        # Ejecutar experimentos con análisis por grupos
+        results_df = run_experiments_with_group_plots(DATA_FILEPATH, experiments)
 
-    # Ejecutar experimentos con análisis por grupos
-    results_df = run_experiments_with_group_plots(DATA_FILEPATH, experiments)
-
-    print("\n✅ Análisis completo de experimentos finalizado.")
-    print(f"📊 Resultados y gráficos guardados en: ./results/")
+        print("\n✅ Análisis completo de experimentos finalizado.")
+        print(f"📊 Resultados y gráficos guardados en: ./results/")

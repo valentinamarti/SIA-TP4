@@ -23,7 +23,9 @@ def execute_kohonen_analysis(
         initial_eta: float,
         initial_radius: float,
         init_method: str,
-        output_name: str
+        output_name: str,
+        adaptative_eta: bool = True,
+        adaptative_radius: bool = True
 ):
     """Exercise 1.1 - Ejecuta el análisis de la Red de Kohonen con parámetros variables."""
     print(f"--- Comando: kohonen (Nombre de salida: {output_name}) ---")
@@ -35,8 +37,8 @@ def execute_kohonen_analysis(
         'epochs': epochs,
         'initial_eta': initial_eta,
         'initial_radius': initial_radius,
-        'eta_adaptive':True,
-        'radius_adaptive':True,
+        'eta_adaptive':adaptative_eta,
+        'radius_adaptive':adaptative_radius,
         'init_method': init_method,
         'output_name': output_name
     }
