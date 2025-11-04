@@ -63,6 +63,44 @@ def fit_with_tracking(net, X, epochs, initial_eta, initial_radius, init_method='
     return net.weights, qe_history, te_history
 
 
+def save_country_mapping_markdown(mapping_df, output_path, exp_name, exp_custom_name):
+    """
+    Guarda la tabla de asociación país - fila/columna en formato Markdown.
+    
+    :param mapping_df: DataFrame con columnas 'Country', 'BMU_Row', 'BMU_Col'
+    :param output_path: Ruta donde guardar el archivo .md
+    :param exp_name: Nombre técnico del experimento
+    :param exp_custom_name: Nombre descriptivo del experimento
+    """
+    # Ordenar por fila y columna para mejor legibilidad
+    mapping_df_sorted = mapping_df.sort_values(by=['BMU_Row', 'BMU_Col']).reset_index(drop=True)
+    
+    # Crear contenido Markdown
+    md_content = f"# Tabla de Asociación País - Neurona (BMU)\n\n"
+    md_content += f"**Experimento:** {exp_custom_name}\n\n"
+    md_content += "Esta tabla muestra la asociación entre cada país y su neurona ganadora (Best Matching Unit - BMU) en el mapa de Kohonen.\n\n"
+    md_content += "| País | Fila | Columna |\n"
+    md_content += "|------|------|----------|\n"
+    
+    for _, row in mapping_df_sorted.iterrows():
+        md_content += f"| {row['Country']} | {row['BMU_Row']} | {row['BMU_Col']} |\n"
+    
+    md_content += "\n---\n\n"
+    md_content += "## Por Posición\n\n"
+    
+    # Agrupar por posición y mostrar qué países están en cada celda
+    position_groups = mapping_df_sorted.groupby(['BMU_Row', 'BMU_Col'])['Country'].apply(list).reset_index()
+    position_groups.columns = ['Fila', 'Columna', 'Países']
+    
+    for _, group in position_groups.iterrows():
+        countries_str = ', '.join(group['Países'])
+        md_content += f"**Posición ({group['Fila']}, {group['Columna']}):** {countries_str}\n\n"
+    
+    # Guardar archivo
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+
+
 def run_experiments_with_group_plots(filepath, exper1iments):
     """
     Ejecuta experimentos y genera gráficos específicos por grupo.
@@ -189,6 +227,15 @@ def run_experiments_with_group_plots(filepath, exper1iments):
                     os.rename(u_matrix_file, f"{group_path}/u_matrix_{exp_name}.png")
                 if os.path.exists(hit_map_file):
                     os.rename(hit_map_file, f"{group_path}/hit_map_{exp_name}.png")
+                
+                # Generar y guardar tabla de asociación país - fila/columna
+                country_mapping = net.map_data_to_bmus(X_scaled, countries)
+                
+                
+                # Guardar Markdown
+                mapping_md_path = f"{group_path}/country_mapping_{exp_name}.md"
+                save_country_mapping_markdown(country_mapping, mapping_md_path, exp_name, exp_custom_name)
+                print(f"  📋 Tabla de asociación (Markdown) guardada en: {mapping_md_path}")
                 
                 # Guardar detalles del experimento (solo primera corrida)
                 experiment_details.append({
